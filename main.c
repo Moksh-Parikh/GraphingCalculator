@@ -37,7 +37,7 @@ HFONT fonts[3];
 #define ROBOTO      1
 #define WINGDINGS   2
 
-wchar_t displayBuffer[1024];
+wchar_t* displayBuffer;
 
 #include "handlers.c"
 #include "layout.c"
@@ -51,6 +51,7 @@ Clay_RenderCommandArray createLayout();
 
 long lastMsgTime = 0;
 bool ui_debug_mode;
+bool shiftDown = false;
 
 #ifndef RECTWIDTH
 #define RECTWIDTH(rc)   ((rc).right - (rc).left)
@@ -58,6 +59,15 @@ bool ui_debug_mode;
 #ifndef RECTHEIGHT
 #define RECTHEIGHT(rc)  ((rc).bottom - (rc).top)
 #endif
+
+void checkAndClearDisplayBuffer(wchar_t** buffer, wchar_t* comparison) {
+    if (!wcscmp(*buffer, comparison)) {
+        for (int i = 0; i < wcslen(comparison); i++) {
+            (*buffer)[i] = L'\0';
+        }
+    }
+}
+
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -126,22 +136,107 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
 
     case WM_KEYDOWN:
-        if (VK_ESCAPE == wParam)
-        {
-            DestroyWindow(hwnd);
+    {
+        printf("%d\n", wParam);
+        if (wParam >= '0' && wParam <= 'Z') {
+            printf("%c\n", wParam);
+            wchar_t convertedCharacter;
+            // TODO: use mbstowcs_s
+            // wouldn't compile with it :(
+            
+            // handle capital and lowercase letters
+            if (shiftDown) {
+                mbtowc(&convertedCharacter, (char *)&(wParam), 1);
+            }
+            else {
+                if ( wParam <= 'A') {
+                    mbtowc(&convertedCharacter, (char *)&(wParam), 1);
+                }
+                else {
+                    wParam += 'a' - 'A';
+                    mbtowc(&convertedCharacter, (char *)&(wParam), 1);
+                }
+            }
+
+            checkAndClearDisplayBuffer(&displayBuffer, L"NULL");
+            
+            displayBuffer[wcslen(displayBuffer)] = convertedCharacter;
+            displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
+
+            InvalidateRect(hwnd, NULL, false);
             break;
         }
 
-        if (wParam == VK_F12)
-        {
-            Clay_SetDebugModeEnabled(ui_debug_mode = !ui_debug_mode);
-            InvalidateRect(hwnd, NULL, false); // force a wm_paint event
-            break;
+        switch (wParam) {
+            case VK_ESCAPE:
+                DestroyWindow(hwnd);
+                break;
+
+            case VK_F12:
+                Clay_SetDebugModeEnabled(ui_debug_mode = !ui_debug_mode);
+                InvalidateRect(hwnd, NULL, false); // force a wm_paint event
+                break;
+            
+            case VK_SHIFT:
+                shiftDown = true;
+                break;
+            
+            case VK_OEM_PLUS:
+            case VK_OEM_PERIOD:
+            case VK_OEM_COMMA:
+            case VK_OEM_MINUS:
+                checkAndClearDisplayBuffer(&displayBuffer, L"NULL");
+                
+                if (shiftDown) {
+                    switch (wParam) {
+                        case VK_OEM_MINUS:
+                            printf("hello?");
+                            displayBuffer[wcslen(displayBuffer)] = L'_';
+                            break;
+                        case VK_OEM_PLUS:
+                            displayBuffer[wcslen(displayBuffer)] = L'+';
+                            break;
+                        case VK_OEM_PERIOD:
+                            displayBuffer[wcslen(displayBuffer)] = L'>';
+                            break;
+                        case VK_OEM_COMMA:
+                            displayBuffer[wcslen(displayBuffer)] = L'<';
+                            break;
+                    }
+                }
+                else {
+                    switch (wParam) {
+                        case VK_OEM_MINUS:
+                            displayBuffer[wcslen(displayBuffer)] = L'-';
+                            break;
+                        case VK_OEM_PLUS:
+                            displayBuffer[wcslen(displayBuffer)] = L'=';
+                            break;
+                        case VK_OEM_PERIOD:
+                            displayBuffer[wcslen(displayBuffer)] = L'.';
+                            break;
+                        case VK_OEM_COMMA:
+                            displayBuffer[wcslen(displayBuffer)] = L',';
+                            break;
+                    }
+                }    
+                
+                displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
+                break;
         }
 
-        printf("Key Pressed: %d\r\n", wParam);
-        InvalidateRect(hwnd, NULL, false); // force a wm_paint event
+        InvalidateRect(hwnd, NULL, false);
         break;
+    }
+
+    case WM_KEYUP:
+    {
+        switch (wParam) {
+            case VK_SHIFT:
+                shiftDown = false;
+                break;
+        }
+    }
 
     // ----------------------- render
     case WM_PAINT:
@@ -190,6 +285,8 @@ int APIENTRY WinMain(
     WNDCLASS wc;
     HWND hwnd;
 
+    displayBuffer = calloc(1024 * sizeof(wchar_t), sizeof(wchar_t));
+
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory) );
     Clay_Initialize(clayMemory, (Clay_Dimensions){.width = 800, .height = 600}, (Clay_ErrorHandler){HandleClayErrors}); // This final argument is new since the video was published
@@ -233,6 +330,8 @@ int APIENTRY WinMain(
         0,
         hInstance,
         0);
+
+    /* CreateWindow("BUTTON", 0, WS_BORDER|WS_CHILD|WS_VISIBLE, 56, 10, 50, 18, hwnd, 0, hInstance, 0); */
 
     if (hwnd == NULL)
         return 0;
