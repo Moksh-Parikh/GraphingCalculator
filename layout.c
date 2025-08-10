@@ -153,6 +153,16 @@ void clayButton(buttonStyle style) {
 void stringToClayString(char* inString, Clay_String* outString) {
     /* outString = malloc(sizeof(Clay_String)); */
     (*outString).isStaticallyAllocated = false;
+    
+    if (inString[0] == '\0') {
+        outString->chars = calloc(strlen("NULL") + 1, sizeof(char));
+        if (outString->chars == NULL) printf("heheh dickhead1\n");
+        
+        strncpy(outString->chars, "NULL\0", strlen("NULL") + 1);
+        outString->length = strlen(outString->chars);
+        
+        return;
+    }
 
     outString->chars = calloc(strlen(inString) + 1, sizeof(char));
     if (outString->chars == NULL) printf("heheh dickhead1\n");
@@ -195,7 +205,6 @@ void clayButtonRow(int buttons, int rowNumber, char** textArray, Clay_BoundingBo
         }
     }
 }
-
 
 Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
     if (displayBuffer[0] == L'\0') {
@@ -266,26 +275,16 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
                 },
                 .backgroundColor = currentTheme.mainColour,
         }) {
-            char* text[12] = {
-                    "0",
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "10",
-                    "11"
-            };
-            for (int j = 0; j < 4; j++) {
-                char* rowText[3];
-                for (int i = 0; i < 3; i++) {
-                    rowText[i] = j == 0 ? text[i + j] : text[i + (3 * j)];
+            for (int j = 0; j < (uint16_t)buttonGrid.height; j++) {
+                char* rowText[(uint16_t)buttonGrid.width];
+
+                for (int i = 0; i < (uint16_t)buttonGrid.width; i++) {
+                    rowText[i] = 
+                    j == 0 ? buttonText.arrayBottom[i + j] :
+                    buttonText.arrayBottom[i + ((uint16_t)buttonGrid.width * j)];
                 }
-                clayButtonRow(3, j, rowText, Clay_GetElementData(
+
+                clayButtonRow(buttonGrid.width, j, rowText, Clay_GetElementData(
                                     Clay_GetElementId(CLAY_STRING("buttonContainer"))
                                     ).boundingBox
                               );

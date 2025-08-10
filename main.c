@@ -29,9 +29,25 @@ typedef struct {
     Clay_Color textColour;
 } Clay_Custom_Wide_String_Style;
 
+typedef struct {
+    uint64_t size;
+    uint64_t arrayPointer;
+    char **arrayBottom;
+} variableStringArray;
+
 #include "renderer/clay_renderer_gdi.c"
 
+variableStringArray buttonText;
+
+// defines the number of buttons on each axis 
+Clay_Dimensions buttonGrid = {
+    .width = 4,
+    .height = 4,
+};
+
 HFONT fonts[3];
+
+#define MAX_BUFFER_SIZE 1024
 
 #define FIRACODE    0
 #define ROBOTO      1
@@ -60,7 +76,7 @@ bool shiftDown = false;
 #define RECTHEIGHT(rc)  ((rc).bottom - (rc).top)
 #endif
 
-void checkAndClearDisplayBuffer(wchar_t** buffer, wchar_t* comparison) {
+void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison) {
     if (!wcscmp(*buffer, comparison)) {
         for (int i = 0; i < wcslen(comparison); i++) {
             (*buffer)[i] = L'\0';
@@ -135,97 +151,47 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
 
-    case WM_KEYDOWN:
+    case WM_CHAR:
     {
-        printf("%d\n", wParam);
-        if (wParam >= '0' && wParam <= 'Z') {
-            printf("%c\n", wParam);
-            wchar_t convertedCharacter;
-            // TODO: use mbstowcs_s
-            // wouldn't compile with it :(
-            
-            // handle capital and lowercase letters
-            if (shiftDown) {
-                mbtowc(&convertedCharacter, (char *)&(wParam), 1);
-            }
-            else {
-                if ( wParam <= 'A') {
-                    mbtowc(&convertedCharacter, (char *)&(wParam), 1);
-                }
-                else {
-                    wParam += 'a' - 'A';
-                    mbtowc(&convertedCharacter, (char *)&(wParam), 1);
-                }
-            }
-
-            checkAndClearDisplayBuffer(&displayBuffer, L"NULL");
-            
-            displayBuffer[wcslen(displayBuffer)] = convertedCharacter;
-            displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
-
+        if (wParam == VK_ESCAPE) {
+            DestroyWindow(hwnd);
+            break;
+        }
+        
+        checkAndClearBuffer(&displayBuffer, L"NULL");
+        
+        if (wParam == 0x08) { // backspace
+            displayBuffer[wcslen(displayBuffer) - 1] = L'\0';
             InvalidateRect(hwnd, NULL, false);
             break;
         }
+        
+        if (wParam == '\n' || wParam == '\r') break; // don't put enter in the buffer
 
+        wchar_t convertedCharacter;
+        // TODO: use mbstowcs_s
+        // wouldn't compile with it :(
+        mbtowc(&convertedCharacter, (char *)&(wParam), 1);
+        displayBuffer[wcslen(displayBuffer)] = convertedCharacter;
+        displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
+
+        InvalidateRect(hwnd, NULL, false);
+        printf("%d\n", wParam);
+        break;
+    }
+
+    case WM_KEYDOWN:
+    {
         switch (wParam) {
-            case VK_ESCAPE:
-                DestroyWindow(hwnd);
-                break;
-
-            case VK_F12:
-                Clay_SetDebugModeEnabled(ui_debug_mode = !ui_debug_mode);
-                InvalidateRect(hwnd, NULL, false); // force a wm_paint event
-                break;
-            
             case VK_SHIFT:
                 shiftDown = true;
                 break;
             
-            case VK_OEM_PLUS:
-            case VK_OEM_PERIOD:
-            case VK_OEM_COMMA:
-            case VK_OEM_MINUS:
-                checkAndClearDisplayBuffer(&displayBuffer, L"NULL");
-                
-                if (shiftDown) {
-                    switch (wParam) {
-                        case VK_OEM_MINUS:
-                            printf("hello?");
-                            displayBuffer[wcslen(displayBuffer)] = L'_';
-                            break;
-                        case VK_OEM_PLUS:
-                            displayBuffer[wcslen(displayBuffer)] = L'+';
-                            break;
-                        case VK_OEM_PERIOD:
-                            displayBuffer[wcslen(displayBuffer)] = L'>';
-                            break;
-                        case VK_OEM_COMMA:
-                            displayBuffer[wcslen(displayBuffer)] = L'<';
-                            break;
-                    }
-                }
-                else {
-                    switch (wParam) {
-                        case VK_OEM_MINUS:
-                            displayBuffer[wcslen(displayBuffer)] = L'-';
-                            break;
-                        case VK_OEM_PLUS:
-                            displayBuffer[wcslen(displayBuffer)] = L'=';
-                            break;
-                        case VK_OEM_PERIOD:
-                            displayBuffer[wcslen(displayBuffer)] = L'.';
-                            break;
-                        case VK_OEM_COMMA:
-                            displayBuffer[wcslen(displayBuffer)] = L',';
-                            break;
-                    }
-                }    
-                
-                displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
+            case VK_F12:
+                Clay_SetDebugModeEnabled(ui_debug_mode = !ui_debug_mode);
+                InvalidateRect(hwnd, NULL, false); // force a wm_paint event
                 break;
         }
-
-        InvalidateRect(hwnd, NULL, false);
         break;
     }
 
@@ -275,6 +241,7 @@ void HandleClayErrors(Clay_ErrorData errorData)
     printf("Handle Clay Errors: %s\r\n", errorData.errorText.chars);
 }
 
+
 int APIENTRY WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
@@ -284,12 +251,40 @@ int APIENTRY WinMain(
     MSG msg;
     WNDCLASS wc;
     HWND hwnd;
+    
+    buttonText.size = (uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height + 1; // account for NULL
 
-    displayBuffer = calloc(1024 * sizeof(wchar_t), sizeof(wchar_t));
+    buttonText.arrayBottom = (char **)calloc((uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height * sizeof(char *), sizeof(char *));
+    
+    // yes I know this is terrible practice :(
+    buttonText.arrayBottom[0] = "0\0";
+    buttonText.arrayBottom[1] = "1\0";
+    buttonText.arrayBottom[2] = "2\0";
+    buttonText.arrayBottom[3] = "3\0";
+    buttonText.arrayBottom[4] = "4\0";
+    buttonText.arrayBottom[5] = "5\0";
+    buttonText.arrayBottom[6] = "6\0";
+    buttonText.arrayBottom[7] = "7\0";
+    buttonText.arrayBottom[8] = "8\0";
+    buttonText.arrayBottom[9] = "9\0";
+    buttonText.arrayBottom[10] = "*\0";
+    buttonText.arrayBottom[11] = "+\0";
+    buttonText.arrayBottom[12] = "-\0";
+    buttonText.arrayBottom[13] = "/\0";
+    buttonText.arrayBottom[14] = "=\0";
+    buttonText.arrayBottom[15] = "^\0";
+
+    displayBuffer = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory) );
-    Clay_Initialize(clayMemory, (Clay_Dimensions){.width = 800, .height = 600}, (Clay_ErrorHandler){HandleClayErrors}); // This final argument is new since the video was published
+    Clay_Initialize(clayMemory,
+                    (Clay_Dimensions)
+                        {.width = 800,
+                        .height = 600},
+                    (Clay_ErrorHandler){
+                    HandleClayErrors}
+    );
 
     Clay_Win32_SetRendererFlags(CLAYGDI_RF_ALPHABLEND | CLAYGDI_RF_SMOOTHCORNERS);
 
@@ -316,8 +311,6 @@ int APIENTRY WinMain(
     RECT rcWindow = { .right = 450, .bottom = 800 };
     AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
 
-    /* displayBuffer = calloc(1024 * sizeof(wchar_t), sizeof(wchar_t)); */
-
     hwnd = CreateWindow(
         szAppName,
         szTitle,
@@ -331,8 +324,6 @@ int APIENTRY WinMain(
         hInstance,
         0);
 
-    /* CreateWindow("BUTTON", 0, WS_BORDER|WS_CHILD|WS_VISIBLE, 56, 10, 50, 18, hwnd, 0, hInstance, 0); */
-
     if (hwnd == NULL)
         return 0;
 
@@ -342,6 +333,9 @@ int APIENTRY WinMain(
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    
+    free(displayBuffer);
+    free(buttonText.arrayBottom);
 
     return msg.wParam;
 }
