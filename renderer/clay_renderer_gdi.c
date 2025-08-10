@@ -319,16 +319,19 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
         case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
         {
             wideText* text = renderCommand->renderData.custom.customData;
-            /* if (!text) { break; } */
+            if (!text) { break; }
+            
+            Clay_Color c = text->textColour;
+            SetTextColor(renderer_hdcMem, RGB(c.r, c.g, c.b));
             SetBkMode(renderer_hdcMem, TRANSPARENT);
-
+            
             RECT r = rc;
             r.left = boundingBox.x;
             r.top = boundingBox.y;
             r.right = boundingBox.x + boundingBox.width + r.right;
             r.bottom = boundingBox.y + boundingBox.height + r.bottom;
 
-            HFONT hFont = *text->fontPointer;
+            HFONT hFont = fonts[text->fontId];
             HFONT hPrevFont = SelectObject(renderer_hdcMem, hFont);
 
             // Actually draw text
@@ -602,6 +605,46 @@ static Clay_Dimensions Clay_Win32_MeasureText(Clay_StringSlice text, Clay_TextEl
 
     textSize.width = maxTextWidth;
     textSize.height = textHeight;
+
+    return textSize;
+}
+
+static Clay_Dimensions Clay_Custom_Win32_MeasureWideText(
+    wideText text,
+    Clay_Custom_Wide_String_Style *config,
+    void *userData)
+{
+    Clay_Dimensions textSize = {0};
+
+    if (userData != NULL)
+    {
+        HFONT* fonts = (HFONT*)userData;
+        HFONT hFont = fonts[config->fontId];
+
+        if (hFont != NULL)
+        {
+            HDC hScreenDC = GetDC(NULL);
+            HDC hTempDC = CreateCompatibleDC(hScreenDC);
+
+            if (hTempDC != NULL)
+            {
+                HFONT hPrevFont = SelectObject(hTempDC, hFont);
+
+                SIZE size;
+                GetTextExtentPoint32W(hTempDC, text.string, text.stringLength, &size);
+
+                textSize.width = size.cx;
+                textSize.height = size.cy;
+
+                SelectObject(hScreenDC, hPrevFont);
+                DeleteDC(hTempDC);
+
+                return textSize;
+            }
+
+            ReleaseDC(HWND_DESKTOP, hScreenDC);
+        }
+    }
 
     return textSize;
 }

@@ -8,6 +8,9 @@
 
 #include <math.h>
 
+#define CLAY_IMPLEMENTATION
+#include "headers/clay.h"
+
 typedef enum {
     CLAY_CUSTOM_WIDE_STRING,
 } customElementType;
@@ -15,20 +18,18 @@ typedef enum {
 typedef struct {
     wchar_t* string;
     uint16_t stringLength;
+    uint16_t fontId;
     uint16_t fontSize;
-    HFONT* fontPointer;
-    customElementType type;
+    Clay_Color textColour;
 } wideText;
 
 typedef struct {
     uint16_t fontId;
     uint16_t fontSize;
+    Clay_Color textColour;
 } Clay_Custom_Wide_String_Style;
 
 #include "renderer/clay_renderer_gdi.c"
-
-#define CLAY_IMPLEMENTATION
-#include "headers/clay.h"
 
 HFONT fonts[1];
 #define FIRACODE 0

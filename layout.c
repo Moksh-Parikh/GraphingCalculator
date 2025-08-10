@@ -82,28 +82,40 @@ theme currentTheme = {
 
 
 void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData) {
-     CLAY(0) {
-        Arena frameArena = (Arena) {
-            .memory = malloc(
-                        wcslen(inString) * sizeof(wchar_t) +
-                        sizeof(uint16_t) +
-                        sizeof(uint16_t) +
-                        sizeof(HFONT*) +
-                        sizeof(customElementType)
-            )
-        };
-        wideText *textData = (wideText *)(frameArena.memory + frameArena.offset);
-        *textData = (wideText) {
-                        .string = malloc(
-                                    (wcslen(inString) + 1) * sizeof(wchar_t)
-                                ),
-                        .stringLength = wcslen(inString),
-                        .fontSize = stringData.fontSize,
-                        .fontPointer = &fonts[stringData.fontId],
-                        .type = CLAY_CUSTOM_WIDE_STRING,
-                    };
-        wcsncpy(textData->string, inString, wcslen(inString) + 1);
-        frameArena.offset += sizeof(wideText);
+    Arena frameArena = (Arena) {
+        .memory = malloc(
+                    wcslen(inString) * sizeof(wchar_t) +
+                    sizeof(uint16_t) + // stringLength
+                    sizeof(uint16_t) + // fontId
+                    sizeof(uint16_t) + // fontSize
+                    sizeof(Clay_Color) // textColour
+        )
+    };
+
+    wideText *textData = (wideText *)(frameArena.memory + frameArena.offset);
+    *textData = (wideText) {
+                    .string = malloc(
+                                (wcslen(inString) + 1) * sizeof(wchar_t)
+                            ),
+                    .stringLength = wcslen(inString),
+                    .fontSize = stringData.fontSize,
+                    .fontId = stringData.fontId,
+                    .textColour = stringData.textColour,
+                };
+    wcsncpy(textData->string, inString, wcslen(inString) + 1);
+    frameArena.offset += sizeof(wideText);
+
+    
+    Clay_Dimensions textDimensions = Clay_Custom_Win32_MeasureWideText(*textData, &stringData, fonts);
+
+    CLAY({
+        .layout = {
+            .sizing = {
+                .width = textDimensions.width,
+                .height = textDimensions.height,
+            },
+        }
+    }) {
         CLAY({
             .custom = {
                 .customData = textData,
@@ -220,13 +232,20 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
                            (Clay_Custom_Wide_String_Style) {
                                 .fontId = 0,
                                 .fontSize = 10,
+                                .textColour = 
+                                (Clay_Color) {
+                                    255,
+                                    255,
+                                    255,
+                                    255
+                                }
                            });
-            CLAY_TEXT(
-                    CLAY_STRING("69"),
-                    CLAY_TEXT_CONFIG({
-                        .textColor = (Clay_Color){255, 189, 189, 255},
-                    })
-            );
+            /* CLAY_TEXT( */
+            /*         CLAY_STRING("69"), */
+            /*         CLAY_TEXT_CONFIG({ */
+            /*             .textColor = (Clay_Color){255, 189, 189, 255}, */
+            /*         }) */
+            /* ); */
         }
 
         CLAY ({
