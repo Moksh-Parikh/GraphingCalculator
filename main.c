@@ -4,17 +4,37 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <math.h>
+
+typedef enum {
+    CLAY_CUSTOM_WIDE_STRING,
+} customElementType;
+
+typedef struct {
+    wchar_t* string;
+    uint16_t stringLength;
+    uint16_t fontSize;
+    HFONT* fontPointer;
+    customElementType type;
+} wideText;
+
+typedef struct {
+    uint16_t fontId;
+    uint16_t fontSize;
+} Clay_Custom_Wide_String_Style;
 
 #include "renderer/clay_renderer_gdi.c"
 
 #define CLAY_IMPLEMENTATION
 #include "headers/clay.h"
 
+HFONT fonts[1];
+#define FIRACODE 0
 #include "layout.c"
 
-#define APPNAME "Clay GDI Example"
+#define APPNAME "Calculator"
 char szAppName[] = APPNAME; // The name of this application
 char szTitle[] = APPNAME;   // The title bar text
 
@@ -23,7 +43,6 @@ Clay_RenderCommandArray createLayout();
 
 long lastMsgTime = 0;
 bool ui_debug_mode;
-HFONT fonts[1];
 
 #ifndef RECTWIDTH
 #define RECTWIDTH(rc)   ((rc).right - (rc).left)
@@ -118,8 +137,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     // ----------------------- render
     case WM_PAINT:
     {
-        Clay_RenderCommandArray renderCommands = createLayout();
-        Clay_Win32_Render(hwnd, renderCommands, fonts);
+        RECT windowRect;
+        GetWindowRect(hwnd, &windowRect);
+
+        Clay_RenderCommandArray renderCommands = createLayout(
+                    (Clay_Dimensions) {
+                        windowRect.right - windowRect.left,
+                        windowRect.bottom - windowRect.top
+                    }
+        );
+        
+                Clay_Win32_Render(hwnd, renderCommands, fonts);
         break;
     }
 
@@ -176,7 +204,7 @@ int APIENTRY WinMain(
 
     // Calculate window rectangle by given client size
     // TODO: AdjustWindowRectExForDpi for DPI support
-    RECT rcWindow = { .right = 800, .bottom = 600 };
+    RECT rcWindow = { .right = 450, .bottom = 800 };
     AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
 
     hwnd = CreateWindow(
@@ -195,13 +223,6 @@ int APIENTRY WinMain(
     if (hwnd == NULL)
         return 0;
 
-
-    printf("CREATE: %d\n", WM_CREATE);
-    printf("DESTROY: %d\n", WM_DESTROY);
-    printf("MOUSEWHEEL: %d\n", WM_MOUSEWHEEL);
-    printf("SIZE: %d\n", WM_SIZE);
-    printf("PAINT: %d\n", WM_PAINT);
-    
     // Main message loop:
     while (GetMessage(&msg, NULL, 0, 0) > 0)
     {

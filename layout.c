@@ -1,4 +1,191 @@
-Clay_RenderCommandArray createLayout() {
+typedef struct {
+    Clay_ElementId id;
+    int width;
+    int height;
+    Clay_Color defaultColour;
+    Clay_Color hoveredColour;
+    Clay_Color textColor;
+    Clay_String text;
+    int fontSize;
+    int action;
+} buttonStyle;
+
+typedef struct {
+    int maxWidth;
+    int height;
+    Clay_Color backgroundColour;
+    Clay_Color barColour;
+    float progress;
+} progressBarStyle;
+
+typedef struct {
+    Clay_ElementId id;
+    Clay_SizingAxis width;
+    int height;
+    Clay_Color boxColour;
+    Clay_Color hoveredColour;
+    Clay_Color textColour;
+    int font;
+    int fontSize;
+    int index;
+} headerStyle;
+
+typedef struct {
+    buttonStyle buttonTheme;
+    progressBarStyle progressBarTheme;
+    headerStyle headerTheme;
+    Clay_Color mainColour;
+    Clay_Color accentColour1;
+    Clay_Color accentColour2;
+    Clay_Color hoveredAccent1;
+    Clay_Color hoveredAccent2;
+} theme;
+
+typedef struct {
+    void* memory;
+    int offset;
+} Arena;
+
+theme currentTheme = {
+    .buttonTheme = {
+        // ebony
+        .defaultColour = (Clay_Color) {0x60, 0x69, 0x5c, 0xff},
+        // lighter ebony
+        .hoveredColour = (Clay_Color) {0x80, 0x89, 0x7c, 0xff},
+        .textColor = (Clay_Color) {255, 255, 255, 255},
+        .fontSize = 10,
+    },
+    .progressBarTheme = {
+        // ebony
+        .backgroundColour = (Clay_Color) {0x60, 0x69, 0x5c, 0xff},
+        // white
+        .barColour = (Clay_Color) {0xf0, 0xeb, 0xd8, 0xff},
+    },
+    .headerTheme = {
+        .boxColour = (Clay_Color) {0x0d, 0x13, 0x21, 0xff},
+        .hoveredColour = (Clay_Color) {0x2d, 0x33, 0x41, 0xff},
+        .textColour = (Clay_Color) {0xf0, 0xeb, 0xd8, 0xff},
+        .fontSize = 24,
+        .font = FIRACODE,
+    },
+    // rich black
+    .mainColour = (Clay_Color) {0x0d, 0x13, 0x21, 0xff},
+    // eggshell
+    .accentColour1 = (Clay_Color) {0xf0, 0xeb, 0xd8, 0xff},
+    // ebony
+    .accentColour2 = (Clay_Color) {0x60, 0x69, 0x5c, 0xff},
+    // basically white
+    .hoveredAccent1 = (Clay_Color) {0xff, 0xfb, 0xf8, 0xff},
+
+    .hoveredAccent2 = (Clay_Color) {0x80, 0x89, 0x7c, 0xff},
+};
+
+
+void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData) {
+     CLAY(0) {
+        Arena frameArena = (Arena) {
+            .memory = malloc(
+                        wcslen(inString) * sizeof(wchar_t) +
+                        sizeof(uint16_t) +
+                        sizeof(uint16_t) +
+                        sizeof(HFONT*) +
+                        sizeof(customElementType)
+            )
+        };
+        wideText *textData = (wideText *)(frameArena.memory + frameArena.offset);
+        *textData = (wideText) {
+                        .string = malloc(
+                                    (wcslen(inString) + 1) * sizeof(wchar_t)
+                                ),
+                        .stringLength = wcslen(inString),
+                        .fontSize = stringData.fontSize,
+                        .fontPointer = &fonts[stringData.fontId],
+                        .type = CLAY_CUSTOM_WIDE_STRING,
+                    };
+        wcsncpy(textData->string, inString, wcslen(inString) + 1);
+        frameArena.offset += sizeof(wideText);
+        CLAY({
+            .custom = {
+                .customData = textData,
+            }
+        });
+    }
+}
+
+
+void clayButton(buttonStyle style) {
+    CLAY({
+            .id = style.id,
+            .layout = {
+                .sizing = {
+                    .width = CLAY_SIZING_GROW(0),
+                    .height = CLAY_SIZING_GROW(0), //style.height),
+                },
+                .childAlignment = {
+                    .x = CLAY_ALIGN_X_CENTER,
+                    .y = CLAY_ALIGN_Y_CENTER,
+                },
+            },
+            .backgroundColor = Clay_Hovered() ? style.hoveredColour : style.defaultColour,
+    }) {
+        CLAY_TEXT(
+                    style.text,
+                    CLAY_TEXT_CONFIG({
+                        .textColor = style.textColor,
+                        .fontSize = style.fontSize,
+                    })
+        );
+    }
+}
+
+
+void stringToClayString(char* inString, Clay_String* outString) {
+    /* outString = malloc(sizeof(Clay_String)); */
+    (*outString).isStaticallyAllocated = false;
+
+    outString->chars = calloc(strlen(inString) + 1, sizeof(char));
+    if (outString->chars == NULL) printf("heheh dickhead1\n");
+
+    strncpy(outString->chars, (char*)inString, strlen(inString));
+
+    outString->length = strlen(outString->chars);
+}
+
+// rowNumber ensures the rows all have a unique ID
+void clayButtonRow(int buttons, int rowNumber, char** textArray, Clay_BoundingBox containerSize) {
+    CLAY({
+        .id = CLAY_IDI("buttonRow", rowNumber),
+        .layout = {
+            .sizing = {
+                .width = CLAY_SIZING_GROW(0),
+                .height = CLAY_SIZING_GROW(0),
+            },
+            .layoutDirection = CLAY_LEFT_TO_RIGHT,
+            .childGap = containerSize.height / 70,
+        },
+    }) {
+        int iteratorOffset = rowNumber * 10;
+        for (int i = iteratorOffset; i < iteratorOffset + buttons; i++) {
+            Clay_String textAsClayString;
+            stringToClayString(textArray[i - iteratorOffset], &textAsClayString);
+            clayButton(
+                (buttonStyle) {
+                    .id = CLAY_IDI("button", i),
+                    .defaultColour = currentTheme.buttonTheme.defaultColour,
+                    .hoveredColour = currentTheme.buttonTheme.hoveredColour,
+                    .textColor = currentTheme.buttonTheme.textColor,
+                    .fontSize = 16,
+                    /* .width = dimensions.width / 4, */
+                    /* .height = dimensions.height / 12, */
+                    .text = textAsClayString,
+                }
+            );
+        }
+    }
+}
+
+
+Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
     Clay_BeginLayout();
 
     CLAY({
@@ -8,21 +195,77 @@ Clay_RenderCommandArray createLayout() {
                 .width = CLAY_SIZING_GROW(0),
                 .height = CLAY_SIZING_GROW(0),
             },
+            .padding = CLAY_PADDING_ALL(dimensions.height / 30),
             .childAlignment = {
                 .x = CLAY_ALIGN_Y_CENTER,
-            }
+            },
+            .layoutDirection = CLAY_TOP_TO_BOTTOM,
         }
     }) {
         CLAY({
             .id = CLAY_ID("Header"),
-            .backgroundColor = (Clay_Color){30, 100, 255, 255},
+            .backgroundColor = (Clay_Color){30, 100, 140, 255},
+            .layout = {
+                .childAlignment = {
+                    .x = CLAY_ALIGN_X_CENTER,
+                    .y = CLAY_ALIGN_Y_CENTER,
+                },
+                .sizing = {
+                    .width = CLAY_SIZING_GROW(0),
+                    .height = CLAY_SIZING_FIXED(dimensions.height / 10),
+                },
+            },
         }) {
+            customWideText(L"WASSUUP",
+                           (Clay_Custom_Wide_String_Style) {
+                                .fontId = 0,
+                                .fontSize = 10,
+                           });
             CLAY_TEXT(
                     CLAY_STRING("69"),
                     CLAY_TEXT_CONFIG({
-                        .textColor = (Clay_Color){255, 189, 189, 255}
+                        .textColor = (Clay_Color){255, 189, 189, 255},
                     })
             );
+        }
+
+        CLAY ({
+                .id = CLAY_ID("buttonContainer"),
+                .layout = {
+                    .padding = CLAY_PADDING_ALL(dimensions.height / 40),
+                    .sizing = {
+                        .width = CLAY_SIZING_GROW(0),
+                        .height = CLAY_SIZING_GROW(0),
+                    },
+                    .childGap = dimensions.height / 70,
+                    .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                },
+                .backgroundColor = currentTheme.mainColour,
+        }) {
+            char* text[12] = {
+                    "0",
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11"
+            };
+            for (int j = 0; j < 4; j++) {
+                char* rowText[3];
+                for (int i = 0; i < 3; i++) {
+                    rowText[i] = j == 0 ? text[i + j] : text[i + (3 * j)];
+                }
+                clayButtonRow(3, j, rowText, Clay_GetElementData(
+                                    Clay_GetElementId(CLAY_STRING("buttonContainer"))
+                                    ).boundingBox
+                              );
+            }
         }
     }
 

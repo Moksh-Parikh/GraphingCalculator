@@ -315,6 +315,33 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
 
         switch (renderCommand->commandType)
         {
+
+        case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
+        {
+            wideText* text = renderCommand->renderData.custom.customData;
+            /* if (!text) { break; } */
+            SetBkMode(renderer_hdcMem, TRANSPARENT);
+
+            RECT r = rc;
+            r.left = boundingBox.x;
+            r.top = boundingBox.y;
+            r.right = boundingBox.x + boundingBox.width + r.right;
+            r.bottom = boundingBox.y + boundingBox.height + r.bottom;
+
+            HFONT hFont = *text->fontPointer;
+            HFONT hPrevFont = SelectObject(renderer_hdcMem, hFont);
+
+            // Actually draw text
+            DrawTextW(renderer_hdcMem, text->string,
+                      text->stringLength,
+                      &r, DT_TOP | DT_LEFT);
+
+            SelectObject(renderer_hdcMem, hPrevFont);
+            
+            free(text->string);
+            free(text);
+            break;            
+        }
         case CLAY_RENDER_COMMAND_TYPE_TEXT:
         {
             Clay_Color c = renderCommand->renderData.text.textColor;
