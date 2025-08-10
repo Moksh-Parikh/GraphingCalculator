@@ -31,8 +31,15 @@ typedef struct {
 
 #include "renderer/clay_renderer_gdi.c"
 
-HFONT fonts[1];
-#define FIRACODE 0
+HFONT fonts[3];
+
+#define FIRACODE    0
+#define ROBOTO      1
+#define WINGDINGS   2
+
+wchar_t displayBuffer[1024];
+
+#include "handlers.c"
 #include "layout.c"
 
 #define APPNAME "Calculator"
@@ -128,6 +135,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (wParam == VK_F12)
         {
             Clay_SetDebugModeEnabled(ui_debug_mode = !ui_debug_mode);
+            InvalidateRect(hwnd, NULL, false); // force a wm_paint event
             break;
         }
 
@@ -188,7 +196,10 @@ int APIENTRY WinMain(
 
     Clay_Win32_SetRendererFlags(CLAYGDI_RF_ALPHABLEND | CLAYGDI_RF_SMOOTHCORNERS);
 
-    fonts[0] = Clay_Win32_SimpleCreateFont("resources/Roboto-Regular.ttf", "Roboto", -11, FW_NORMAL);
+    fonts[0] = Clay_Win32_SimpleCreateFont("resources/FiraCode-Regular.ttf", "FiraCode", 20, FW_NORMAL);
+    fonts[1] = Clay_Win32_SimpleCreateFont("resources/Roboto-Regular.ttf", "Roboto", 20, FW_NORMAL);
+    fonts[2] = Clay_Win32_SimpleCreateFont("resources/wingdings.ttf", "wingdings", 20, FW_NORMAL);
+
     Clay_SetMeasureTextFunction(Clay_Win32_MeasureText, fonts);
 
     ZeroMemory(&wc, sizeof wc);
@@ -207,6 +218,8 @@ int APIENTRY WinMain(
     // TODO: AdjustWindowRectExForDpi for DPI support
     RECT rcWindow = { .right = 450, .bottom = 800 };
     AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
+
+    /* displayBuffer = calloc(1024 * sizeof(wchar_t), sizeof(wchar_t)); */
 
     hwnd = CreateWindow(
         szAppName,

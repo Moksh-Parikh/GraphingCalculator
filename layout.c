@@ -114,14 +114,11 @@ void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData)
                 .width = textDimensions.width,
                 .height = textDimensions.height,
             },
+        },
+        .custom = {
+            .customData = textData,
         }
-    }) {
-        CLAY({
-            .custom = {
-                .customData = textData,
-            }
-        });
-    }
+    });
 }
 
 
@@ -140,11 +137,13 @@ void clayButton(buttonStyle style) {
             },
             .backgroundColor = Clay_Hovered() ? style.hoveredColour : style.defaultColour,
     }) {
+        Clay_OnHover(handleButton, (intptr_t)NULL);
         CLAY_TEXT(
                     style.text,
                     CLAY_TEXT_CONFIG({
                         .textColor = style.textColor,
                         .fontSize = style.fontSize,
+                        .fontId = ROBOTO,
                     })
         );
     }
@@ -163,7 +162,7 @@ void stringToClayString(char* inString, Clay_String* outString) {
     outString->length = strlen(outString->chars);
 }
 
-// rowNumber ensures the rows all have a unique ID
+
 void clayButtonRow(int buttons, int rowNumber, char** textArray, Clay_BoundingBox containerSize) {
     CLAY({
         .id = CLAY_IDI("buttonRow", rowNumber),
@@ -176,13 +175,14 @@ void clayButtonRow(int buttons, int rowNumber, char** textArray, Clay_BoundingBo
             .childGap = containerSize.height / 70,
         },
     }) {
+        // ensures the rows all have a unique ID
         int iteratorOffset = rowNumber * 10;
-        for (int i = iteratorOffset; i < iteratorOffset + buttons; i++) {
+        for (int i = 0; i < buttons; i++) {
             Clay_String textAsClayString;
-            stringToClayString(textArray[i - iteratorOffset], &textAsClayString);
+            stringToClayString(textArray[i], &textAsClayString);
             clayButton(
                 (buttonStyle) {
-                    .id = CLAY_IDI("button", i),
+                    .id = CLAY_SID(textAsClayString),
                     .defaultColour = currentTheme.buttonTheme.defaultColour,
                     .hoveredColour = currentTheme.buttonTheme.hoveredColour,
                     .textColor = currentTheme.buttonTheme.textColor,
@@ -198,6 +198,10 @@ void clayButtonRow(int buttons, int rowNumber, char** textArray, Clay_BoundingBo
 
 
 Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
+    if (displayBuffer[0] == L'\0') {
+        wcsncpy(displayBuffer, L"NULL", 4);
+    }
+
     Clay_BeginLayout();
 
     CLAY({
@@ -219,19 +223,20 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
             .backgroundColor = (Clay_Color){30, 100, 140, 255},
             .layout = {
                 .childAlignment = {
-                    .x = CLAY_ALIGN_X_CENTER,
+                    .x = CLAY_ALIGN_X_RIGHT,
                     .y = CLAY_ALIGN_Y_CENTER,
                 },
                 .sizing = {
                     .width = CLAY_SIZING_GROW(0),
                     .height = CLAY_SIZING_FIXED(dimensions.height / 10),
                 },
+                .padding = CLAY_PADDING_ALL(dimensions.height / 40)
             },
         }) {
-            customWideText(L"WASSUUP",
+            customWideText(displayBuffer,
                            (Clay_Custom_Wide_String_Style) {
-                                .fontId = 0,
-                                .fontSize = 10,
+                                .fontId = FIRACODE,
+                                .fontSize = 10,//dimensions.height / 10,
                                 .textColour = 
                                 (Clay_Color) {
                                     255,
