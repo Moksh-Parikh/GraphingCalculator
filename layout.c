@@ -84,7 +84,7 @@ theme currentTheme = {
 void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData) {
     Arena frameArena = (Arena) {
         .memory = malloc(
-                    wcslen(inString) * sizeof(wchar_t) +
+                    (wcslen(inString) + 1) * sizeof(wchar_t) +
                     sizeof(uint16_t) + // stringLength
                     sizeof(uint16_t) + // fontId
                     sizeof(uint16_t) + // fontSize
@@ -102,6 +102,7 @@ void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData)
                     .fontId = stringData.fontId,
                     .textColour = stringData.textColour,
                 };
+    // printf("malloced textData\n");
     wcsncpy(textData->string, inString, wcslen(inString) + 1);
     frameArena.offset += sizeof(wideText);
 
@@ -158,7 +159,7 @@ void stringToClayString(char* inString, Clay_String* outString) {
         outString->chars = calloc(strlen("NULL") + 1, sizeof(char));
         if (outString->chars == NULL) printf("heheh dickhead1\n");
         
-        strncpy(outString->chars, "NULL\0", strlen("NULL") + 1);
+        strncpy((char *)outString->chars, "NULL\0", strlen("NULL") + 1);
         outString->length = strlen(outString->chars);
         
         return;
@@ -167,7 +168,7 @@ void stringToClayString(char* inString, Clay_String* outString) {
     outString->chars = calloc(strlen(inString) + 1, sizeof(char));
     if (outString->chars == NULL) printf("heheh dickhead1\n");
 
-    strncpy(outString->chars, (char*)inString, strlen(inString));
+    strncpy((char *)outString->chars, (char*)inString, strlen(inString));
 
     outString->length = strlen(outString->chars);
 }

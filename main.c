@@ -63,7 +63,6 @@ char szAppName[] = APPNAME; // The name of this application
 char szTitle[] = APPNAME;   // The title bar text
 
 void CenterWindow(HWND hWnd);
-Clay_RenderCommandArray createLayout();
 
 long lastMsgTime = 0;
 bool ui_debug_mode;
@@ -252,6 +251,17 @@ int APIENTRY WinMain(
     WNDCLASS wc;
     HWND hwnd;
     
+    uint64_t clayRequiredMemory = Clay_MinMemorySize();
+    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory + 1000) );
+    Clay_Initialize(clayMemory,
+                    (Clay_Dimensions)
+                        {.width = 800,
+                        .height = 600},
+                    (Clay_ErrorHandler){
+                    HandleClayErrors}
+    );
+
+    
     buttonText.size = (uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height + 1; // account for NULL
 
     buttonText.arrayBottom = (char **)calloc((uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height * sizeof(char *), sizeof(char *));
@@ -276,16 +286,6 @@ int APIENTRY WinMain(
 
     displayBuffer = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
 
-    uint64_t clayRequiredMemory = Clay_MinMemorySize();
-    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory) );
-    Clay_Initialize(clayMemory,
-                    (Clay_Dimensions)
-                        {.width = 800,
-                        .height = 600},
-                    (Clay_ErrorHandler){
-                    HandleClayErrors}
-    );
-
     Clay_Win32_SetRendererFlags(CLAYGDI_RF_ALPHABLEND | CLAYGDI_RF_SMOOTHCORNERS);
 
     fonts[0] = Clay_Win32_SimpleCreateFont("resources/FiraCode-Regular.ttf", "FiraCode", 20, FW_NORMAL);
@@ -309,7 +309,7 @@ int APIENTRY WinMain(
     // Calculate window rectangle by given client size
     // TODO: AdjustWindowRectExForDpi for DPI support
     RECT rcWindow = { .right = 450, .bottom = 800 };
-    AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
+    AdjustWindowRectExForDpi(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE, 0, 157);//GetDpiForWindow(hwnd) );
 
     hwnd = CreateWindow(
         szAppName,

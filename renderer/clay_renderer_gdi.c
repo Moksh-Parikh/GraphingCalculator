@@ -47,14 +47,21 @@ inline bool Clay_Win32_ModifyRendererFlags(DWORD dwRemove, DWORD dwAdd)
  | Math stuff start                                                           |
  +----------------------------------------------------------------------------*/
 // Intrinsincs wrappers
-#if !defined(CLAY_DISABLE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64))
-inline float intrin_sqrtf(const float f)
+// #if !defined(CLAY_DISABLE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64))
+// inline float intrin_sqrtf(const float f)
+// {
+//     __m128 temp = _mm_set_ss(f);
+//     temp = _mm_sqrt_ss(temp);
+//     return _mm_cvtss_f32(temp);
+// }
+// #endif
+
+float intrin_sqrtf(const float f)
 {
     __m128 temp = _mm_set_ss(f);
     temp = _mm_sqrt_ss(temp);
     return _mm_cvtss_f32(temp);
 }
-#endif
 
 // Use fast inverse square root
 #if defined(USE_FAST_SQRT)
@@ -342,7 +349,6 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
             SelectObject(renderer_hdcMem, hPrevFont);
             
             free(text->string);
-            free(text);
             break;            
         }
         case CLAY_RENDER_COMMAND_TYPE_TEXT:
