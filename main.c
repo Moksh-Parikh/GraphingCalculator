@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <math.h>
 
@@ -14,6 +15,20 @@
 typedef enum {
     CLAY_CUSTOM_WIDE_STRING,
 } customElementType;
+
+
+typedef enum {
+    ADDITION = 0,
+    SUBTRACTION,
+    MULTIPLICATION,
+    DIVISION,
+    EXPONENT
+} operationType;
+
+typedef struct {
+    wchar_t character;
+    uint16_t occurrence;
+} occurrenceTable;
 
 typedef struct {
     wchar_t* string;
@@ -53,6 +68,7 @@ HFONT fonts[3];
 #define ROBOTO      1
 #define WINGDINGS   2
 
+void clearBuffer(wchar_t* buffer);
 wchar_t* displayBuffer;
 
 #include "handlers.c"
@@ -80,6 +96,15 @@ void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison) {
         for (int i = 0; i < wcslen(comparison); i++) {
             (*buffer)[i] = L'\0';
         }
+    }
+}
+
+
+void clearBuffer(wchar_t* buffer) {
+    int bufferSize = wcslen(buffer);
+
+    for (int i = 0; i < bufferSize; i++) {
+        buffer[i] = L'\0';
     }
 }
 
@@ -161,11 +186,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         
         if (wParam == 0x08) { // backspace
             displayBuffer[wcslen(displayBuffer) - 1] = L'\0';
+            wprintf(L"%ls\n", displayBuffer);
             InvalidateRect(hwnd, NULL, false);
             break;
         }
         
-        if (wParam == '\n' || wParam == '\r') break; // don't put enter in the buffer
+        if (wParam == '\n' || wParam == '\r') {
+            inputHandler(displayBuffer);
+            wprintf(L"%ls\n", displayBuffer);
+            InvalidateRect(hwnd, NULL, false);
+            break;
+        }
 
         wchar_t convertedCharacter;
         // TODO: use mbstowcs_s
@@ -174,8 +205,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         displayBuffer[wcslen(displayBuffer)] = convertedCharacter;
         displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
 
+        wprintf(L"%ls\n", displayBuffer);
+        
         InvalidateRect(hwnd, NULL, false);
-        printf("%d\n", wParam);
         break;
     }
 

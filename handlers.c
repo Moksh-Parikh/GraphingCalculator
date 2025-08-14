@@ -13,3 +13,119 @@ void handleButton(Clay_ElementId elementId, Clay_PointerData pointerData, intptr
         printf("Clicked: %s\n", elementId.stringId.chars);
     }
 }
+
+// void checkForWideCharacters(wchar_t* inputString,
+//                             wchar_t* searchArray,
+//                             occurrenceTable* outOccurrenceTable)
+// {
+//     uint16_t inStringLength = wcslen(inputString);
+//     uint16_t searchArrayLength = wcslen(searchArray);
+
+//     for (int i = 0; i < inStringLength; i++) {
+//         for (int j = 0; j < searchArrayLength) {
+//             if (inputString[i] == searchCharacter) {
+//                 return i;
+//             }
+//         }
+//     }
+// }
+
+int16_t findWideCharacter(wchar_t* inputString,
+                      wchar_t searchCharacter) {
+    uint16_t inStringLength = wcslen(inputString);
+
+    for (int i = 0; i < inStringLength; i++) {
+        if (inputString[i] == searchCharacter) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+
+operationType operationParser(wchar_t operationCharacter) {
+    wprintf(L"char: %lc\n", operationCharacter);
+    switch (operationCharacter) {
+        case L'+':
+            return ADDITION;
+        
+        case L'-':
+            return SUBTRACTION;
+        
+        case L'*':
+            return MULTIPLICATION;
+        
+        case L'/':
+            return DIVISION;
+        
+        case L'^':
+            return EXPONENT;
+    }
+}
+
+
+int calculate(int number1, int number2, operationType operation) {
+    printf("op: %d\n", operation);
+    switch (operation) {
+        case ADDITION:
+            return number1 + number2;
+        case SUBTRACTION:
+            printf("result: %d\n", number1 - number2);
+            return number1 - number2;
+        case MULTIPLICATION:
+            return number1 * number2;
+        case DIVISION:
+            return number1 / number2;
+    }
+}
+
+
+uint16_t inputHandler(wchar_t* inputBuffer) {
+    wchar_t operations[5] = {
+        L'+',
+        L'-',
+        L'*',
+        L'/',
+        L'^',
+    };
+    
+    int index = 0;
+    wchar_t* tempString;
+    int bufferSize = wcslen(inputBuffer);
+    int tempNumber;
+
+    for (int i = 0; i < 5; i++) {
+        if ( ( index = findWideCharacter(inputBuffer, operations[i]) ) >= 0 ) {
+            tempString = malloc(index * sizeof(wchar_t) );
+            // don't need to allocate one more for NULL as index
+            // is location of operation sign, which is excluded
+            // from wcsncpy
+            wcsncpy(tempString, inputBuffer, index);
+            wprintf(L"index: %d\ntempString1: %ls\n", index, tempString);
+            tempString[index] = L'\0';
+
+            tempNumber = wcstol(tempString, NULL, 10);
+
+            free(tempString);
+            tempString = malloc( (bufferSize - index + 1) * sizeof(wchar_t));
+
+            wcsncpy(tempString, inputBuffer + index + 1, bufferSize - index);
+            tempString[bufferSize - index] = L'\0';
+            wprintf(L"tempString2: %ls\n", tempString);
+            
+            int result = calculate(tempNumber,                             
+                      wcstol(tempString, NULL, 10),
+                      operationParser(inputBuffer[index])
+                      );
+            clearBuffer(displayBuffer);
+
+            snwprintf(displayBuffer, MAX_BUFFER_SIZE, L"%d", 
+                   result
+                   );
+            free(tempString);
+        }
+    }
+
+    return 0;
+}

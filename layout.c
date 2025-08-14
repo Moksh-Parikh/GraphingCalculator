@@ -255,12 +255,6 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
                                     255
                                 }
                            });
-            /* CLAY_TEXT( */
-            /*         CLAY_STRING("69"), */
-            /*         CLAY_TEXT_CONFIG({ */
-            /*             .textColor = (Clay_Color){255, 189, 189, 255}, */
-            /*         }) */
-            /* ); */
         }
 
         CLAY ({
