@@ -1,52 +1,3 @@
-typedef struct {
-    Clay_ElementId id;
-    int width;
-    int height;
-    Clay_Color defaultColour;
-    Clay_Color hoveredColour;
-    Clay_Color textColor;
-    Clay_String text;
-    int fontSize;
-    int action;
-} buttonStyle;
-
-typedef struct {
-    int maxWidth;
-    int height;
-    Clay_Color backgroundColour;
-    Clay_Color barColour;
-    float progress;
-} progressBarStyle;
-
-typedef struct {
-    Clay_ElementId id;
-    Clay_SizingAxis width;
-    int height;
-    Clay_Color boxColour;
-    Clay_Color hoveredColour;
-    Clay_Color textColour;
-    Clay_Color borderColour;
-    int font;
-    int fontSize;
-    int index;
-} headerStyle;
-
-typedef struct {
-    buttonStyle buttonTheme;
-    progressBarStyle progressBarTheme;
-    headerStyle headerTheme;
-    Clay_Color mainColour;
-    Clay_Color accentColour1;
-    Clay_Color accentColour2;
-    Clay_Color hoveredAccent1;
-    Clay_Color hoveredAccent2;
-} clayTheme;
-
-typedef struct {
-    void* memory;
-    int offset;
-} Arena;
-
 clayTheme currentTheme = {
     .buttonTheme = {
         // ebony
@@ -93,6 +44,10 @@ void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData)
                     sizeof(Clay_Color) // textColour
         )
     };
+    if (frameArena.memory == NULL) {
+        printf("malloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
 
     wideText *textData = (wideText *)(frameArena.memory + frameArena.offset);
     int stringLength = wcslen(inString);
@@ -107,6 +62,10 @@ void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData)
                     .fontId = stringData.fontId,
                     .textColour = stringData.textColour,
                 };
+    if (textData->string == NULL) {
+        printf("malloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
     // printf("calloced textData\n");
     wcsncpy(textData->string, inString, wcslen(inString) + 1);
 
@@ -154,40 +113,6 @@ void clayButton(buttonStyle style) {
         );
     }
 }
-
-
-void stringToClayString(char* inString, Clay_String* outString) {
-    /* outString = malloc(sizeof(Clay_String)); */
-    (*outString).isStaticallyAllocated = false;
-    
-    if (inString == NULL) {
-        outString->chars = calloc(strlen("inString is NULL") + 1, sizeof(char));
-        if (outString->chars == NULL) printf("heheh dickhead1\n");
-        
-        strncpy((char *)outString->chars, "inString is NULL\0", strlen("inString is NULL") + 1);
-        outString->length = strlen(outString->chars);
-        
-        return;
-    }
-    
-    if (inString[0] == '\0') {
-        outString->chars = calloc(strlen("NULL") + 1, sizeof(char));
-        if (outString->chars == NULL) printf("heheh dickhead1\n");
-        
-        strncpy((char *)outString->chars, "NULL\0", strlen("NULL") + 1);
-        outString->length = strlen(outString->chars);
-        
-        return;
-    }
-
-    outString->chars = calloc(strlen(inString) + 1, sizeof(char));
-    if (outString->chars == NULL) printf("heheh dickhead1\n");
-
-    strncpy((char *)outString->chars, (char*)inString, strlen(inString));
-
-    outString->length = strlen(outString->chars);
-}
-
 
 void clayButtonRow(int buttons, int rowNumber, char** textArray, buttonStyle styleArray[], Clay_BoundingBox containerSize) {
     CLAY({

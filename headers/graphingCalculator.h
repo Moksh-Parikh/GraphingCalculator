@@ -61,6 +61,72 @@ typedef struct {
     char **arrayBottom;
 } variableStringArray;
 
-void clearBuffer(wchar_t* buffer);
+typedef struct {
+    Clay_ElementId id;
+    int width;
+    int height;
+    Clay_Color defaultColour;
+    Clay_Color hoveredColour;
+    Clay_Color textColor;
+    Clay_String text;
+    int fontSize;
+    int action;
+} buttonStyle;
 
+typedef struct {
+    int maxWidth;
+    int height;
+    Clay_Color backgroundColour;
+    Clay_Color barColour;
+    float progress;
+} progressBarStyle;
+
+typedef struct {
+    Clay_ElementId id;
+    Clay_SizingAxis width;
+    int height;
+    Clay_Color boxColour;
+    Clay_Color hoveredColour;
+    Clay_Color textColour;
+    Clay_Color borderColour;
+    int font;
+    int fontSize;
+    int index;
+} headerStyle;
+
+typedef struct {
+    buttonStyle buttonTheme;
+    progressBarStyle progressBarTheme;
+    headerStyle headerTheme;
+    Clay_Color mainColour;
+    Clay_Color accentColour1;
+    Clay_Color accentColour2;
+    Clay_Color hoveredAccent1;
+    Clay_Color hoveredAccent2;
+} clayTheme;
+
+typedef struct {
+    void* memory;
+    int offset;
+} Arena;
+
+void CenterWindow(HWND hWnd);
+
+// stringFunctions.c
+void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison);
+void clearBuffer(wchar_t* buffer);
 void fillStringArray(char** inputArray, char** outputArray, int outputArraySize);
+void stringToClayString(char* inString, Clay_String* outString);
+
+// layout.c
+void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData);
+void clayButton(buttonStyle style);
+void clayButtonRow(int buttons, int rowNumber, char** textArray, buttonStyle styleArray[], Clay_BoundingBox containerSize);
+Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layoutTheme);
+
+// handlers.c
+void handleButton(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData); 
+int16_t findWideCharacter(wchar_t* inputString, wchar_t searchCharacter);
+operationType operationParser(wchar_t operationCharacter);
+double calculate(double number1, double number2, operationType operation);
+uint16_t inputHandler(wchar_t* inputBuffer, wchar_t* outputBuffer);

@@ -54,16 +54,13 @@ HFONT fonts[3];
 
 outputBuffers displayBuffers;
 
-// wchar_t* displayBuffers.top;
-
 #include "handlers.c"
 #include "layout.c"
+#include "stringFunctions.c"
 
 #define APPNAME "Calculator"
 char szAppName[] = APPNAME; // The name of this application
 char szTitle[] = APPNAME;   // The title bar text
-
-void CenterWindow(HWND hWnd);
 
 long lastMsgTime = 0;
 bool ui_debug_mode;
@@ -75,24 +72,6 @@ bool shiftDown = false;
 #ifndef RECTHEIGHT
 #define RECTHEIGHT(rc)  ((rc).bottom - (rc).top)
 #endif
-
-void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison) {
-    if (!wcscmp(*buffer, comparison)) {
-        for (int i = 0; i < wcslen(comparison); i++) {
-            (*buffer)[i] = L'\0';
-        }
-    }
-}
-
-
-void clearBuffer(wchar_t* buffer) {
-    int bufferSize = wcslen(buffer);
-
-    for (int i = 0; i < bufferSize; i++) {
-        buffer[i] = L'\0';
-    }
-}
-
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -274,28 +253,6 @@ void HandleClayErrors(Clay_ErrorData errorData)
 }
 
 
-void fillStringArray(char** inputArray,
-                     char** outputArray,
-                     int outputArraySize
-) {
-    uint32_t inputArraySize = sizeof(inputArray) / sizeof(inputArray[0]);
-
-    for (int i = 0; i < outputArraySize; i++) {
-        int sourceStringLength = strlen(inputArray[i]);
-
-        outputArray[i] = calloc(
-                            (sourceStringLength + 1) * sizeof(char),
-                            sizeof(char)
-                         );
-
-        strncpy(outputArray[i],
-                inputArray[i],
-                sourceStringLength);
-        outputArray[i][sourceStringLength] = '\0';
-    }
-}
-
-
 int APIENTRY WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
@@ -307,7 +264,7 @@ int APIENTRY WinMain(
     HWND hwnd;
     
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
-    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory + 1000) );
+    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory) );
     Clay_Initialize(clayMemory,
                     (Clay_Dimensions)
                         {.width = 800,
@@ -322,13 +279,25 @@ int APIENTRY WinMain(
                 (uint16_t)buttonGrid.height *
                 sizeof(char *), sizeof(char *)
     );
+    if (buttonText == NULL) {
+        printf("calloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
 
     fillStringArray(buttonTextOptions, buttonText, buttonGrid.width * buttonGrid.height);
 
 
     displayBuffers.top = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
+    if (displayBuffers.top == NULL) {
+        printf("calloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
+    
     displayBuffers.bottom = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
-    // wcsncpy(displayBuffers.bottom, L"HIII", 5);
+    if (displayBuffers.bottom == NULL) {
+        printf("calloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
 
     Clay_Win32_SetRendererFlags(CLAYGDI_RF_ALPHABLEND | CLAYGDI_RF_SMOOTHCORNERS);
 
