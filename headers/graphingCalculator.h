@@ -13,6 +13,7 @@
 #include "clay.h"
 
 #define MAX_BUFFER_SIZE 1024
+#define MAXIMUM_BUTTONS 37
 
 #define FIRACODE    0
 #define ROBOTO      1
@@ -61,3 +62,5 @@ typedef struct {
 } variableStringArray;
 
 void clearBuffer(wchar_t* buffer);
+
+void fillStringArray(char** inputArray, char** outputArray, int outputArraySize);

@@ -160,6 +160,16 @@ void stringToClayString(char* inString, Clay_String* outString) {
     /* outString = malloc(sizeof(Clay_String)); */
     (*outString).isStaticallyAllocated = false;
     
+    if (inString == NULL) {
+        outString->chars = calloc(strlen("inString is NULL") + 1, sizeof(char));
+        if (outString->chars == NULL) printf("heheh dickhead1\n");
+        
+        strncpy((char *)outString->chars, "inString is NULL\0", strlen("inString is NULL") + 1);
+        outString->length = strlen(outString->chars);
+        
+        return;
+    }
+    
     if (inString[0] == '\0') {
         outString->chars = calloc(strlen("NULL") + 1, sizeof(char));
         if (outString->chars == NULL) printf("heheh dickhead1\n");
@@ -297,10 +307,10 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layou
                         .textColor = layoutTheme.buttonTheme.textColor,
                         .fontSize = 16,
                     };
-                    // printf("%d, %d\n", j, i);
+
                     rowText[i] = 
-                    j == 0 ? buttonText.arrayBottom[i + j] :
-                    buttonText.arrayBottom[i + ((uint16_t)buttonGrid.width * j)];
+                    j == 0 ? buttonText[i + j] :
+                    buttonText[i + ((uint16_t)buttonGrid.width * j)];
                 }
 
                 clayButtonRow(buttonGrid.width,

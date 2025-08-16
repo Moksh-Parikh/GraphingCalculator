@@ -2,7 +2,47 @@
 
 #include "renderer/clay_renderer_gdi.c"
 
-variableStringArray buttonText;
+char** buttonText;
+char *buttonTextOptions[MAXIMUM_BUTTONS] =
+{
+    "C",
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "*",
+    "+",
+    "-",
+    "/",
+    "=",
+    "^",
+    ":",
+    ":-",
+    ":--",
+    ":---",
+    ":----",
+    ":-----",
+    "M",
+    "M+",
+    "M-",
+    "(",
+    ")",
+    "[",
+    "]",
+    "Differentiate",
+    "Integral",
+    "Approximate",
+    "{",
+    "}",
+    ">",
+    "<",
+};
 
 // defines the number of buttons on each axis 
 Clay_Dimensions buttonGrid = {
@@ -107,13 +147,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_SIZE: // resize events
     {
-
         RECT r = {0};
-        if (GetClientRect(hwnd, &r))
-        {
-            Clay_Dimensions dim = (Clay_Dimensions){.height = r.bottom - r.top, .width = r.right - r.left};
+        Clay_Dimensions dim;
+
+        if (GetClientRect(hwnd, &r)) {
+            dim = (Clay_Dimensions){.height = r.bottom - r.top, .width = r.right - r.left};
             Clay_SetLayoutDimensions(dim);
         }
+        
+        buttonGrid.width = dim.width / 100;
+        buttonGrid.height = dim.height / 100;
+
+        if (buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS) {
+            for (int i = 0; buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS; i++) {
+                if (i % 2 == 0) {buttonGrid.height -= 1;}
+                else {buttonGrid.width -= 1;}
+            }
+        }
+
+        fillStringArray(buttonTextOptions, buttonText, buttonGrid.width * buttonGrid.height);
 
         InvalidateRect(hwnd, NULL, false); // force a wm_paint event
 
@@ -253,32 +305,6 @@ int APIENTRY WinMain(
     MSG msg;
     WNDCLASS wc;
     HWND hwnd;
-
-    char *buttonTextOptions[22] =
-    {
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "*",
-        "+",
-        "-",
-        "/",
-        "=",
-        "^",
-        ":",
-        ":-",
-        ":--",
-        ":---",
-        ":----",
-        ":-----",
-    };
     
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory + 1000) );
@@ -291,29 +317,14 @@ int APIENTRY WinMain(
     );
 
     
-    buttonText.size = (uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height + 1; // account for NULL
+    buttonText = (char **)calloc(
+                (uint16_t)buttonGrid.width *
+                (uint16_t)buttonGrid.height *
+                sizeof(char *), sizeof(char *)
+    );
 
-    buttonText.arrayBottom = (char **)calloc((uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height * sizeof(char *), sizeof(char *));
+    fillStringArray(buttonTextOptions, buttonText, buttonGrid.width * buttonGrid.height);
 
-    fillStringArray(buttonTextOptions, buttonText.arrayBottom, buttonGrid.width * buttonGrid.height);
-
-    // yes I know this is terrible practice :(
-    // buttonText.arrayBottom[0] = "0\0";
-    // buttonText.arrayBottom[1] = "1\0";
-    // buttonText.arrayBottom[2] = "2\0";
-    // buttonText.arrayBottom[3] = "3\0";
-    // buttonText.arrayBottom[4] = "4\0";
-    // buttonText.arrayBottom[5] = "5\0";
-    // buttonText.arrayBottom[6] = "6\0";
-    // buttonText.arrayBottom[7] = "7\0";
-    // buttonText.arrayBottom[8] = "8\0";
-    // buttonText.arrayBottom[9] = "9\0";
-    // buttonText.arrayBottom[10] = "*\0";
-    // buttonText.arrayBottom[11] = "+\0";
-    // buttonText.arrayBottom[12] = "-\0";
-    // buttonText.arrayBottom[13] = "/\0";
-    // buttonText.arrayBottom[14] = "=\0";
-    // buttonText.arrayBottom[15] = "^\0";
 
     displayBuffers.top = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
     displayBuffers.bottom = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
@@ -368,7 +379,13 @@ int APIENTRY WinMain(
     }
     
     free(displayBuffers.top);
-    free(buttonText.arrayBottom);
+    free(displayBuffers.bottom);
+
+    for (int i = 0; i < buttonGrid.width * buttonGrid.height; i++) {
+        free(buttonText[i]);
+    }
+
+    free(buttonText);
 
     return msg.wParam;
 }
