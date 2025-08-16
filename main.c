@@ -6,7 +6,7 @@ variableStringArray buttonText;
 
 // defines the number of buttons on each axis 
 Clay_Dimensions buttonGrid = {
-    .width = 4,
+    .width = 5,
     .height = 4,
 };
 
@@ -193,7 +193,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     (Clay_Dimensions) {
                         windowRect.right - windowRect.left,
                         windowRect.bottom - windowRect.top
-                    }
+                    },
+                    currentTheme
         );
         
                 Clay_Win32_Render(hwnd, renderCommands, fonts);
@@ -221,6 +222,28 @@ void HandleClayErrors(Clay_ErrorData errorData)
 }
 
 
+void fillStringArray(char** inputArray,
+                     char** outputArray,
+                     int outputArraySize
+) {
+    uint32_t inputArraySize = sizeof(inputArray) / sizeof(inputArray[0]);
+
+    for (int i = 0; i < outputArraySize; i++) {
+        int sourceStringLength = strlen(inputArray[i]);
+
+        outputArray[i] = calloc(
+                            (sourceStringLength + 1) * sizeof(char),
+                            sizeof(char)
+                         );
+
+        strncpy(outputArray[i],
+                inputArray[i],
+                sourceStringLength);
+        outputArray[i][sourceStringLength] = '\0';
+    }
+}
+
+
 int APIENTRY WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
@@ -230,6 +253,32 @@ int APIENTRY WinMain(
     MSG msg;
     WNDCLASS wc;
     HWND hwnd;
+
+    char *buttonTextOptions[22] =
+    {
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "*",
+        "+",
+        "-",
+        "/",
+        "=",
+        "^",
+        ":",
+        ":-",
+        ":--",
+        ":---",
+        ":----",
+        ":-----",
+    };
     
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory + 1000) );
@@ -245,24 +294,26 @@ int APIENTRY WinMain(
     buttonText.size = (uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height + 1; // account for NULL
 
     buttonText.arrayBottom = (char **)calloc((uint16_t)buttonGrid.width * (uint16_t)buttonGrid.height * sizeof(char *), sizeof(char *));
-    
+
+    fillStringArray(buttonTextOptions, buttonText.arrayBottom, buttonGrid.width * buttonGrid.height);
+
     // yes I know this is terrible practice :(
-    buttonText.arrayBottom[0] = "0\0";
-    buttonText.arrayBottom[1] = "1\0";
-    buttonText.arrayBottom[2] = "2\0";
-    buttonText.arrayBottom[3] = "3\0";
-    buttonText.arrayBottom[4] = "4\0";
-    buttonText.arrayBottom[5] = "5\0";
-    buttonText.arrayBottom[6] = "6\0";
-    buttonText.arrayBottom[7] = "7\0";
-    buttonText.arrayBottom[8] = "8\0";
-    buttonText.arrayBottom[9] = "9\0";
-    buttonText.arrayBottom[10] = "*\0";
-    buttonText.arrayBottom[11] = "+\0";
-    buttonText.arrayBottom[12] = "-\0";
-    buttonText.arrayBottom[13] = "/\0";
-    buttonText.arrayBottom[14] = "=\0";
-    buttonText.arrayBottom[15] = "^\0";
+    // buttonText.arrayBottom[0] = "0\0";
+    // buttonText.arrayBottom[1] = "1\0";
+    // buttonText.arrayBottom[2] = "2\0";
+    // buttonText.arrayBottom[3] = "3\0";
+    // buttonText.arrayBottom[4] = "4\0";
+    // buttonText.arrayBottom[5] = "5\0";
+    // buttonText.arrayBottom[6] = "6\0";
+    // buttonText.arrayBottom[7] = "7\0";
+    // buttonText.arrayBottom[8] = "8\0";
+    // buttonText.arrayBottom[9] = "9\0";
+    // buttonText.arrayBottom[10] = "*\0";
+    // buttonText.arrayBottom[11] = "+\0";
+    // buttonText.arrayBottom[12] = "-\0";
+    // buttonText.arrayBottom[13] = "/\0";
+    // buttonText.arrayBottom[14] = "=\0";
+    // buttonText.arrayBottom[15] = "^\0";
 
     displayBuffers.top = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
     displayBuffers.bottom = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
