@@ -93,20 +93,23 @@ void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData)
     };
 
     wideText *textData = (wideText *)(frameArena.memory + frameArena.offset);
+    int stringLength = wcslen(inString);
+    
     *textData = (wideText) {
-                    .string = malloc(
-                                (wcslen(inString) + 1) * sizeof(wchar_t)
+                    .string = calloc(
+                                (stringLength + 1) * sizeof(wchar_t),
+                                sizeof(wchar_t)
                             ),
                     .stringLength = wcslen(inString),
                     .fontSize = stringData.fontSize,
                     .fontId = stringData.fontId,
                     .textColour = stringData.textColour,
                 };
-    // printf("malloced textData\n");
+    // printf("calloced textData\n");
     wcsncpy(textData->string, inString, wcslen(inString) + 1);
+
     frameArena.offset += sizeof(wideText);
 
-    
     Clay_Dimensions textDimensions = Clay_Custom_Win32_MeasureWideText(*textData, &stringData, fonts);
 
     CLAY({
@@ -208,8 +211,12 @@ void clayButtonRow(int buttons, int rowNumber, char** textArray, Clay_BoundingBo
 }
 
 Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
-    if (displayBuffer[0] == L'\0') {
-        wcsncpy(displayBuffer, L"NULL", 4);
+    if (displayBuffers.top[0] == L'\0') {
+        wcsncpy(displayBuffers.top, L" ", 2);
+    }
+    
+    if (displayBuffers.bottom[0] == L'\0') {
+        wcsncpy(displayBuffers.bottom, L" ", 2);
     }
 
     Clay_BeginLayout();
@@ -236,6 +243,7 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
                     .x = CLAY_ALIGN_X_RIGHT,
                     .y = CLAY_ALIGN_Y_CENTER,
                 },
+                .layoutDirection = CLAY_TOP_TO_BOTTOM,
                 .sizing = {
                     .width = CLAY_SIZING_GROW(0),
                     .height = CLAY_SIZING_FIXED(dimensions.height / 10),
@@ -243,7 +251,19 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions) {
                 .padding = CLAY_PADDING_ALL(dimensions.height / 40)
             },
         }) {
-            customWideText(displayBuffer,
+            customWideText(displayBuffers.top,
+                           (Clay_Custom_Wide_String_Style) {
+                                .fontId = FIRACODE,
+                                .fontSize = 10,//dimensions.height / 10,
+                                .textColour = 
+                                (Clay_Color) {
+                                    255,
+                                    255,
+                                    255,
+                                    255
+                                }
+                           });
+            customWideText(displayBuffers.bottom,
                            (Clay_Custom_Wide_String_Style) {
                                 .fontId = FIRACODE,
                                 .fontSize = 10,//dimensions.height / 10,

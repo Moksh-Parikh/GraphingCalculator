@@ -1,54 +1,4 @@
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <windowsx.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-
-#include <math.h>
-
-#define CLAY_IMPLEMENTATION
-#include "headers/clay.h"
-
-typedef enum {
-    CLAY_CUSTOM_WIDE_STRING,
-} customElementType;
-
-
-typedef enum {
-    ADDITION = 0,
-    SUBTRACTION,
-    MULTIPLICATION,
-    DIVISION,
-    EXPONENT
-} operationType;
-
-typedef struct {
-    wchar_t character;
-    uint16_t occurrence;
-} occurrenceTable;
-
-typedef struct {
-    wchar_t* string;
-    uint16_t stringLength;
-    uint16_t fontId;
-    uint16_t fontSize;
-    Clay_Color textColour;
-} wideText;
-
-typedef struct {
-    uint16_t fontId;
-    uint16_t fontSize;
-    Clay_Color textColour;
-} Clay_Custom_Wide_String_Style;
-
-typedef struct {
-    uint64_t size;
-    uint64_t arrayPointer;
-    char **arrayBottom;
-} variableStringArray;
+#include "headers/graphingCalculator.h"
 
 #include "renderer/clay_renderer_gdi.c"
 
@@ -62,14 +12,9 @@ Clay_Dimensions buttonGrid = {
 
 HFONT fonts[3];
 
-#define MAX_BUFFER_SIZE 1024
+outputBuffers displayBuffers;
 
-#define FIRACODE    0
-#define ROBOTO      1
-#define WINGDINGS   2
-
-void clearBuffer(wchar_t* buffer);
-wchar_t* displayBuffer;
+// wchar_t* displayBuffers.top;
 
 #include "handlers.c"
 #include "layout.c"
@@ -182,18 +127,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
         
-        checkAndClearBuffer(&displayBuffer, L"NULL");
+        checkAndClearBuffer(&displayBuffers.top, L" ");
+        checkAndClearBuffer(&displayBuffers.bottom, L" ");
         
         if (wParam == 0x08) { // backspace
-            displayBuffer[wcslen(displayBuffer) - 1] = L'\0';
-            wprintf(L"%ls\n", displayBuffer);
+            displayBuffers.top[wcslen(displayBuffers.top) - 1] = L'\0';
+            wprintf(L"%ls\n", displayBuffers.top);
             InvalidateRect(hwnd, NULL, false);
             break;
         }
         
         if (wParam == '\n' || wParam == '\r') {
-            inputHandler(displayBuffer);
-            wprintf(L"%ls\n", displayBuffer);
+            inputHandler(displayBuffers.top,
+                         displayBuffers.bottom
+                        );
+            wprintf(L"%ls\n", displayBuffers.top);
             InvalidateRect(hwnd, NULL, false);
             break;
         }
@@ -202,10 +150,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         // TODO: use mbstowcs_s
         // wouldn't compile with it :(
         mbtowc(&convertedCharacter, (char *)&(wParam), 1);
-        displayBuffer[wcslen(displayBuffer)] = convertedCharacter;
-        displayBuffer[wcslen(displayBuffer) + 1] = L'\0';
+        displayBuffers.top[wcslen(displayBuffers.top)] = convertedCharacter;
+        displayBuffers.top[wcslen(displayBuffers.top) + 1] = L'\0';
 
-        wprintf(L"%ls\n", displayBuffer);
+        wprintf(L"%ls\n", displayBuffers.top);
         
         InvalidateRect(hwnd, NULL, false);
         break;
@@ -316,7 +264,9 @@ int APIENTRY WinMain(
     buttonText.arrayBottom[14] = "=\0";
     buttonText.arrayBottom[15] = "^\0";
 
-    displayBuffer = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
+    displayBuffers.top = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
+    displayBuffers.bottom = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
+    // wcsncpy(displayBuffers.bottom, L"HIII", 5);
 
     Clay_Win32_SetRendererFlags(CLAYGDI_RF_ALPHABLEND | CLAYGDI_RF_SMOOTHCORNERS);
 
@@ -340,7 +290,7 @@ int APIENTRY WinMain(
 
     // Calculate window rectangle by given client size
     // TODO: AdjustWindowRectExForDpi for DPI support
-    RECT rcWindow = { .right = 450, .bottom = 800 };
+    RECT rcWindow = { .right = 450, .bottom = 600 };
     AdjustWindowRectExForDpi(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE, 0, 157);//GetDpiForWindow(hwnd) );
 
     hwnd = CreateWindow(
@@ -366,7 +316,7 @@ int APIENTRY WinMain(
         DispatchMessage(&msg);
     }
     
-    free(displayBuffer);
+    free(displayBuffers.top);
     free(buttonText.arrayBottom);
 
     return msg.wParam;

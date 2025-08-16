@@ -341,10 +341,11 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
             HFONT hFont = fonts[text->fontId];
             HFONT hPrevFont = SelectObject(renderer_hdcMem, hFont);
 
-            // Actually draw text
-            DrawTextW(renderer_hdcMem, text->string,
+            DrawTextW(renderer_hdcMem,
+                      text->string,
                       text->stringLength,
-                      &r, DT_TOP | DT_LEFT);
+                      &r, DT_TOP | DT_LEFT
+            );
 
             SelectObject(renderer_hdcMem, hPrevFont);
             
@@ -545,7 +546,7 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
 }
 
 /*
-    Hacks due to the windows api not making sence to use.... may measure too large, but never too small
+    Hacks due to the windows api not making sense to use.... may measure too large, but never too small
 */
 
 #ifndef WIN32_FONT_HEIGHT
