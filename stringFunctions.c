@@ -33,7 +33,6 @@ void fillStringArray(char** inputArray,
                             (sourceStringLength + 1) * sizeof(char),
                             sizeof(char)
                          );
-
         if (outputArray[i] == NULL) {
             printf("calloc() failed in %s, exiting\n", __func__);
             exit(1);

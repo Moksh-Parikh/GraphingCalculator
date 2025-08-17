@@ -1,48 +1,12 @@
+// Are global variables bad?
+// I dont like them so I might
+// try getting rid of them
+
 #include "headers/graphingCalculator.h"
 
 #include "renderer/clay_renderer_gdi.c"
 
 char** buttonText;
-char *buttonTextOptions[MAXIMUM_BUTTONS] =
-{
-    "C",
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "*",
-    "+",
-    "-",
-    "/",
-    "=",
-    "^",
-    ":",
-    ":-",
-    ":--",
-    ":---",
-    ":----",
-    ":-----",
-    "M",
-    "M+",
-    "M-",
-    "(",
-    ")",
-    "[",
-    "]",
-    "Differentiate",
-    "Integral",
-    "Approximate",
-    "{",
-    "}",
-    ">",
-    "<",
-};
 
 // defines the number of buttons on each axis 
 Clay_Dimensions buttonGrid = {
@@ -75,6 +39,46 @@ bool shiftDown = false;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    char *buttonTextOptions[MAXIMUM_BUTTONS] =
+    {
+        "C",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "*",
+        "+",
+        "-",
+        "/",
+        "=",
+        "^",
+        ":",
+        ":-",
+        ":--",
+        ":---",
+        ":----",
+        ":-----",
+        "M",
+        "M+",
+        "M-",
+        "(",
+        ")",
+        "[",
+        "]",
+        "Differentiate",
+        "Integral",
+        "Approximate",
+        "{",
+        "}",
+        ">",
+        "<",
+    };
 
     switch (message)
     {
@@ -82,9 +86,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     // ----------------------- first and last
     case WM_CREATE:
         CenterWindow(hwnd);
+        // SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)"hi");//(LONG_PTR)(&john) );
         break;
 
     case WM_DESTROY:
+        // printf("%s\n", (char *)GetWindowLongPtr(hwnd, GWLP_USERDATA) );
         PostQuitMessage(0);
         break;
 
@@ -225,7 +231,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                         windowRect.right - windowRect.left,
                         windowRect.bottom - windowRect.top
                     },
-                    currentTheme
+                    currentTheme,
+                    buttonGrid
         );
         
                 Clay_Win32_Render(hwnd, renderCommands, fonts);
@@ -262,7 +269,7 @@ int APIENTRY WinMain(
     MSG msg;
     WNDCLASS wc;
     HWND hwnd;
-    
+
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory) );
     Clay_Initialize(clayMemory,
@@ -273,7 +280,7 @@ int APIENTRY WinMain(
                     HandleClayErrors}
     );
 
-    
+
     buttonText = (char **)calloc(
                 (uint16_t)buttonGrid.width *
                 (uint16_t)buttonGrid.height *
@@ -284,16 +291,21 @@ int APIENTRY WinMain(
         exit(1);
     }
 
-    fillStringArray(buttonTextOptions, buttonText, buttonGrid.width * buttonGrid.height);
-
-
-    displayBuffers.top = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
+    displayBuffers.top = calloc(
+                    MAX_BUFFER_SIZE *
+                    sizeof(wchar_t),
+                    sizeof(wchar_t)
+    );
     if (displayBuffers.top == NULL) {
         printf("calloc() failed in %s, exiting\n", __func__);
         exit(1);
     }
     
-    displayBuffers.bottom = calloc(MAX_BUFFER_SIZE * sizeof(wchar_t), sizeof(wchar_t));
+    displayBuffers.bottom = calloc(
+                    MAX_BUFFER_SIZE *
+                    sizeof(wchar_t),
+                    sizeof(wchar_t)
+    );
     if (displayBuffers.bottom == NULL) {
         printf("calloc() failed in %s, exiting\n", __func__);
         exit(1);
@@ -306,6 +318,14 @@ int APIENTRY WinMain(
     fonts[2] = Clay_Win32_SimpleCreateFont("resources/wingdings.ttf", "wingdings", 20, FW_NORMAL);
 
     Clay_SetMeasureTextFunction(Clay_Win32_MeasureText, fonts);
+
+    // Clay_Win32_WndProc_Data john = {
+    //     .buttonTextArray = buttonText,
+    //     .buttonGridDimensions = buttonGrid,
+    //     .fontArray = fonts,
+    //     .fontArraySize = 3,
+    //     .displayBuffers = displayBuffers,
+    // };
 
     ZeroMemory(&wc, sizeof wc);
     wc.hInstance = hInstance;

@@ -110,6 +110,14 @@ typedef struct {
     int offset;
 } Arena;
 
+typedef struct {
+    char** buttonTextArray;
+    HFONT* fontArray;
+    int fontArraySize;
+    Clay_Dimensions buttonGridDimensions;
+    outputBuffers displayBuffers;
+} Clay_Win32_WndProc_Data;
+
 void CenterWindow(HWND hWnd);
 
 // stringFunctions.c
@@ -122,7 +130,7 @@ void stringToClayString(char* inString, Clay_String* outString);
 void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData);
 void clayButton(buttonStyle style);
 void clayButtonRow(int buttons, int rowNumber, char** textArray, buttonStyle styleArray[], Clay_BoundingBox containerSize);
-Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layoutTheme);
+Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layoutTheme, Clay_Dimensions buttonGridDimensions);
 
 // handlers.c
 void handleButton(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData); 
@@ -130,3 +138,15 @@ int16_t findWideCharacter(wchar_t* inputString, wchar_t searchCharacter);
 operationType operationParser(wchar_t operationCharacter);
 double calculate(double number1, double number2, operationType operation);
 uint16_t inputHandler(wchar_t* inputBuffer, wchar_t* outputBuffer);
+
+// renderer
+DWORD Clay_Win32_GetRendererFlags() { return g_dwGdiRenderFlags; }
+void Clay_Win32_SetRendererFlags(DWORD dwFlags) { g_dwGdiRenderFlags = dwFlags; }
+static inline Clay_Color ColorBlend(Clay_Color base, Clay_Color overlay, float factor)
+static float RoundedRectPixelCoverage(int x, int y, const Clay_CornerRadius radius, int width, int height) {
+static void CreateHDCSubstitute(HDCSubstitute* phdcs, HDC hdcSrc, PRECT prc)
+static void __Clay_Win32_FillRoundRect(HDC hdc, PRECT prc, Clay_Color color, Clay_CornerRadius radius)
+void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT* fonts)
+static Clay_Dimensions Clay_Win32_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
+static Clay_Dimensions Clay_Custom_Win32_MeasureWideText(wideText text, Clay_Custom_Wide_String_Style *config, void *userData) {
+HFONT Clay_Win32_SimpleCreateFont(const char* filePath, const char* family, int height, int weight);

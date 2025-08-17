@@ -147,7 +147,7 @@ void clayButtonRow(int buttons, int rowNumber, char** textArray, buttonStyle sty
     }
 }
 
-Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layoutTheme) {
+Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layoutTheme, Clay_Dimensions buttonGridDimensions) {
     if (displayBuffers.top[0] == L'\0') {
         wcsncpy(displayBuffers.top, L" ", 2);
     }
@@ -221,11 +221,11 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layou
                 },
                 .backgroundColor = currentTheme.mainColour,
         }) {
-            buttonStyle styleArray[(uint16_t)buttonGrid.width];
-            for (int j = 0; j < (uint16_t)buttonGrid.height; j++) {
-                char* rowText[(uint16_t)buttonGrid.width];
+            buttonStyle styleArray[(uint16_t)buttonGridDimensions.width];
+            for (int j = 0; j < (uint16_t)buttonGridDimensions.height; j++) {
+                char* rowText[(uint16_t)buttonGridDimensions.width];
 
-                for (int i = 0; i < (uint16_t)buttonGrid.width; i++) {
+                for (int i = 0; i < (uint16_t)buttonGridDimensions.width; i++) {
                     styleArray[i] = (buttonStyle){
                         .defaultColour = layoutTheme.buttonTheme.defaultColour,
                         .hoveredColour = layoutTheme.buttonTheme.hoveredColour,
@@ -235,10 +235,10 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layou
 
                     rowText[i] = 
                     j == 0 ? buttonText[i + j] :
-                    buttonText[i + ((uint16_t)buttonGrid.width * j)];
+                    buttonText[i + ((uint16_t)buttonGridDimensions.width * j)];
                 }
 
-                clayButtonRow(buttonGrid.width,
+                clayButtonRow(buttonGridDimensions.width,
                               j,
                               rowText,
                               styleArray,
