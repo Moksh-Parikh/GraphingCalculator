@@ -181,13 +181,6 @@ static float RoundedRectPixelCoverage(int x, int y, const Clay_CornerRadius radi
     }
 }
 
-typedef struct {
-    HDC hdcMem;
-    HBITMAP hbmMem;
-    HBITMAP hbmMemPrev;
-    void* pBits;
-    SIZE size;
-} HDCSubstitute;
 
 static void CreateHDCSubstitute(HDCSubstitute* phdcs, HDC hdcSrc, PRECT prc)
 {
@@ -322,35 +315,113 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
 
         switch (renderCommand->commandType)
         {
-
         case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
         {
-            wideText* text = renderCommand->renderData.custom.customData;
-            if (!text) { break; }
-            
-            Clay_Color c = text->textColour;
-            SetTextColor(renderer_hdcMem, RGB(c.r, c.g, c.b));
-            SetBkMode(renderer_hdcMem, TRANSPARENT);
-            
-            RECT r = rc;
-            r.left = boundingBox.x;
-            r.top = boundingBox.y;
-            r.right = boundingBox.x + boundingBox.width + r.right;
-            r.bottom = boundingBox.y + boundingBox.height + r.bottom;
+            Clay_CustomElementData *customElement = renderCommand->renderData.custom.customData;
 
-            HFONT hFont = fonts[text->fontId];
-            HFONT hPrevFont = SelectObject(renderer_hdcMem, hFont);
+            switch(customElement->type) {
+                case CLAY_CUSTOM_WIDE_STRING:
+                {
+                wideText text = customElement->text;
+                // if (!text) { break; }
+                
+                Clay_Color c = text.textColour;
+                SetTextColor(renderer_hdcMem, RGB(c.r, c.g, c.b));
+                SetBkMode(renderer_hdcMem, TRANSPARENT);
+                
+                RECT r = rc;
+                r.left = boundingBox.x;
+                r.top = boundingBox.y;
+                r.right = boundingBox.x + boundingBox.width + r.right;
+                r.bottom = boundingBox.y + boundingBox.height + r.bottom;
 
-            DrawTextW(renderer_hdcMem,
-                      text->string,
-                      text->stringLength,
-                      &r, DT_TOP | DT_LEFT
-            );
+                HFONT hFont = fonts[text.fontId];
+                HFONT hPrevFont = SelectObject(renderer_hdcMem, hFont);
 
-            SelectObject(renderer_hdcMem, hPrevFont);
-            
-            free(text->string);
-            break;            
+                DrawTextW(renderer_hdcMem,
+                          text.string,
+                          text.stringLength,
+                          &r, DT_TOP | DT_LEFT
+                );
+
+                SelectObject(renderer_hdcMem, hPrevFont);
+                
+                free(text.string);
+                break;
+                }
+
+                case CLAY_CUSTOM_GRAPH:
+                {
+                graphData graph = customElement->graph;
+                
+                RECT r = rc;
+                r.left = boundingBox.x;
+                r.top = boundingBox.y;
+                r.right = boundingBox.x + boundingBox.width;
+                r.bottom = boundingBox.y + boundingBox.height;
+
+                HBRUSH graphBackgroundColour = CreateSolidBrush(
+                                    RGB(
+                                        graph.backgroundColour.r,
+                                        graph.backgroundColour.g,
+                                        graph.backgroundColour.b
+                                    )
+                                  );
+                FillRect(renderer_hdcMem, &r, graphBackgroundColour);
+                DeleteObject(graphBackgroundColour);
+
+                HPEN gridLinePen = CreatePen(PS_SOLID, 1,
+                                             RGB(0x80, 0x80, 0x80)
+                                            );
+                HPEN centreGridLinePen = CreatePen(PS_SOLID, 2,
+                                             RGB(0x80, 0x80, 0x80)
+                                            );
+                HPEN graphPen = CreatePen(PS_SOLID, 10,
+                                          RGB(0xff, 0x00, 0x00)
+                                         );
+
+                HPEN oldPen = SelectObject(renderer_hdcMem, gridLinePen);
+
+                int verticalCentre = 1 + (graph.horizontalGridLines - 1) / 2;
+                for (int i = 1; i <= graph.horizontalGridLines; i++) {
+                    MoveToEx(renderer_hdcMem, r.left, r.top + (i * boundingBox.height / (graph.horizontalGridLines + 1) ), NULL);
+                    if (i == verticalCentre) {
+                        SelectObject(renderer_hdcMem, centreGridLinePen);
+                    }
+                    LineTo(renderer_hdcMem, r.right, r.top + (i * boundingBox.height / (graph.horizontalGridLines + 1) ) );
+                    if (i == verticalCentre) {
+                        SelectObject(renderer_hdcMem, gridLinePen);
+                    }
+                }
+
+                int horizontalCentre = 1 + (graph.verticalGridLines - 1) / 2;
+                for (int i = 1; i <= graph.verticalGridLines + 1; i++) {
+                    MoveToEx(renderer_hdcMem, r.left + (i * boundingBox.width / (graph.verticalGridLines + 1) ), r.top, NULL);
+
+                    if (i == horizontalCentre) {
+                        SelectObject(renderer_hdcMem, centreGridLinePen);
+                    }
+
+                    LineTo(renderer_hdcMem, r.left + (i * boundingBox.width / (graph.verticalGridLines + 1) ) , r.bottom);
+                    if (i == horizontalCentre) {
+                        SelectObject(renderer_hdcMem, gridLinePen);
+                    }
+                }
+                
+                // SelectObject(renderer_hdcMem, graphPen);
+                // MoveToEx(renderer_hdcMem, r.left, r.top, NULL);
+                // LineTo(renderer_hdcMem, r.left, r.bottom);
+
+                SelectObject(renderer_hdcMem, oldPen);
+                DeleteObject(graphPen);
+                DeleteObject(gridLinePen);
+                DeleteObject(centreGridLinePen);
+                break;
+                }
+            }
+
+            free(customElement);
+            break;
         }
         case CLAY_RENDER_COMMAND_TYPE_TEXT:
         {

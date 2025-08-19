@@ -366,14 +366,18 @@ int APIENTRY WinMain(
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    
+
+    // printf("freeing top\n");
     free(displayBuffers.top);
+    // printf("freeing bottom\n");
     free(displayBuffers.bottom);
 
     for (int i = 0; i < buttonGrid.width * buttonGrid.height; i++) {
+        // printf("freeing array[%d]\n", i);
         free(buttonText[i]);
     }
 
+    // printf("freeing array\n");
     free(buttonText);
 
     return msg.wParam;

@@ -35,43 +35,36 @@ clayTheme currentTheme = {
 
 
 void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData) {
-    Arena frameArena = (Arena) {
-        .memory = malloc(
-                    (wcslen(inString) + 1) * sizeof(wchar_t) +
-                    sizeof(uint16_t) + // stringLength
-                    sizeof(uint16_t) + // fontId
-                    sizeof(uint16_t) + // fontSize
-                    sizeof(Clay_Color) // textColour
-        )
-    };
-    if (frameArena.memory == NULL) {
-        printf("malloc() failed in %s, exiting\n", __func__);
-        exit(1);
-    }
-
-    wideText *textData = (wideText *)(frameArena.memory + frameArena.offset);
+    // wideText *textData = malloc(sizeof(wideText));
     int stringLength = wcslen(inString);
     
-    *textData = (wideText) {
-                    .string = calloc(
-                                (stringLength + 1) * sizeof(wchar_t),
-                                sizeof(wchar_t)
-                            ),
-                    .stringLength = wcslen(inString),
-                    .fontSize = stringData.fontSize,
-                    .fontId = stringData.fontId,
-                    .textColour = stringData.textColour,
-                };
-    if (textData->string == NULL) {
+    Clay_CustomElementData *textData = (Clay_CustomElementData *)malloc(sizeof(Clay_CustomElementData));
+    if (textData == NULL) {
         printf("malloc() failed in %s, exiting\n", __func__);
         exit(1);
     }
-    // printf("calloced textData\n");
-    wcsncpy(textData->string, inString, wcslen(inString) + 1);
+    
+    *textData = (Clay_CustomElementData){
+        .type = CLAY_CUSTOM_WIDE_STRING,
+        .text = (wideText) {
+            .string = calloc(
+                        (stringLength + 1) * sizeof(wchar_t),
+                        sizeof(wchar_t)
+                    ),
+            .stringLength = wcslen(inString),
+            .fontSize = stringData.fontSize,
+            .fontId = stringData.fontId,
+            .textColour = stringData.textColour,
+        },
+    };
+    if (textData->text.string == NULL) {
+        printf("calloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
 
-    frameArena.offset += sizeof(wideText);
+    wcsncpy(textData->text.string, inString, stringLength + 1);
 
-    Clay_Dimensions textDimensions = Clay_Custom_Win32_MeasureWideText(*textData, &stringData, fonts);
+    Clay_Dimensions textDimensions = Clay_Custom_Win32_MeasureWideText(textData->text, &stringData, fonts);
 
     CLAY({
         .layout = {
@@ -83,6 +76,35 @@ void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData)
         .custom = {
             .customData = textData,
         }
+    });
+}
+
+
+void customGraph() {//Clay_Dimensions dimensions) {
+    Clay_CustomElementData *graphInfo = (Clay_CustomElementData*)malloc(
+        sizeof(Clay_CustomElementData)
+    );
+
+    *graphInfo = (Clay_CustomElementData){
+        .type = CLAY_CUSTOM_GRAPH,
+        .graph = (graphData){
+            .backgroundColour = (Clay_Color){0xff,0xff,0xff,0xff},
+            .horizontalGridLines = 5,
+            .verticalGridLines = 5,
+        },
+    };
+
+    CLAY({
+        .id = CLAY_ID("Graph"),
+        .layout = {
+            .sizing = {
+                .width = CLAY_SIZING_GROW(0),
+                .height = CLAY_SIZING_GROW(0),
+            },
+        },
+        .custom = {
+            .customData = graphInfo,
+        },
     });
 }
 
@@ -175,12 +197,8 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layou
         }
     }) {
         CLAY({
-            .id = CLAY_ID("Header"),
-            .backgroundColor = layoutTheme.headerTheme.boxColour,
-            .border = {
-                .width = {4,4,4,4,0},
-                .color = layoutTheme.headerTheme.borderColour,
-            },
+            .id = CLAY_ID("GraphAndEquationContainer"),
+            // .backgroundColor = layoutTheme.headerTheme.boxColour,
             .layout = {
                 .childAlignment = {
                     .x = CLAY_ALIGN_X_RIGHT,
@@ -189,23 +207,58 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layou
                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
                 .sizing = {
                     .width = CLAY_SIZING_GROW(0),
-                    .height = CLAY_SIZING_FIXED(dimensions.height / 10),
+                    .height = CLAY_SIZING_FIXED(dimensions.height / 2),
                 },
-                .padding = CLAY_PADDING_ALL(dimensions.height / 40)
+                .childGap = 4,
             },
         }) {
-            customWideText(displayBuffers.top,
-                           (Clay_Custom_Wide_String_Style) {
-                                .fontId = FIRACODE,
-                                .fontSize = layoutTheme.headerTheme.fontSize,
-                                .textColour = layoutTheme.headerTheme.textColour,
-                           });
-            customWideText(displayBuffers.bottom,
-                           (Clay_Custom_Wide_String_Style) {
-                                .fontId = FIRACODE,
-                                .fontSize = layoutTheme.headerTheme.fontSize,
-                                .textColour = layoutTheme.headerTheme.textColour,
-                           });
+            // CLAY({
+            //     .id = CLAY_ID("Graph"),
+            //     .backgroundColor = (Clay_Color){0x0,0x0,0x0,0xff},
+            //     .layout = {
+            //         .sizing = {
+            //             .width = CLAY_SIZING_GROW(0),
+            //             .height = CLAY_SIZING_GROW(0),
+            //         },
+            //     },
+            // }){
+            customGraph();
+             // (Clay_Dimensions){500, 500});
+                 // }
+            
+            CLAY({
+                .id = CLAY_ID("Equation"),
+                .backgroundColor = layoutTheme.headerTheme.boxColour,
+                // .border = {
+                //     .width = {4,4,4,4,0},
+                //     .color = layoutTheme.headerTheme.borderColour,
+                // },
+                .layout = {
+                    .sizing = {
+                        .width = CLAY_SIZING_GROW(0),
+                        // .height = CLAY_SIZING_GROW(0),
+                    },
+                    .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                    .childAlignment = {
+                        .x = CLAY_ALIGN_X_RIGHT,
+                        .y = CLAY_ALIGN_Y_CENTER,
+                    },
+                    .padding = CLAY_PADDING_ALL(dimensions.height / 40)
+                },
+            }){
+                customWideText(displayBuffers.top,
+                               (Clay_Custom_Wide_String_Style) {
+                                    .fontId = FIRACODE,
+                                    .fontSize = layoutTheme.headerTheme.fontSize,
+                                    .textColour = layoutTheme.headerTheme.textColour,
+                               });
+                customWideText(displayBuffers.bottom,
+                               (Clay_Custom_Wide_String_Style) {
+                                    .fontId = FIRACODE,
+                                    .fontSize = layoutTheme.headerTheme.fontSize,
+                                    .textColour = layoutTheme.headerTheme.textColour,
+                               });
+            }
         }
 
         CLAY ({

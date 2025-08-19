@@ -21,6 +21,7 @@
 
 typedef enum {
     CLAY_CUSTOM_WIDE_STRING,
+    CLAY_CUSTOM_GRAPH
 } customElementType;
 
 typedef struct {
@@ -48,6 +49,25 @@ typedef struct {
     uint16_t fontSize;
     Clay_Color textColour;
 } wideText;
+
+typedef struct {
+    int32_t leftTopX;
+    int32_t leftTopY;
+    uint32_t width;
+    uint32_t height;
+    Clay_Color backgroundColour;
+    Clay_Color graphColour;
+    uint16_t horizontalGridLines;
+    uint16_t verticalGridLines;
+} graphData;
+
+typedef struct {
+    customElementType type;
+    union {
+        wideText text;
+        graphData graph;
+    };
+} Clay_CustomElementData;
 
 typedef struct {
     uint16_t fontId;
@@ -118,6 +138,14 @@ typedef struct {
     outputBuffers displayBuffers;
 } Clay_Win32_WndProc_Data;
 
+typedef struct {
+    HDC hdcMem;
+    HBITMAP hbmMem;
+    HBITMAP hbmMemPrev;
+    void* pBits;
+    SIZE size;
+} HDCSubstitute;
+
 void CenterWindow(HWND hWnd);
 
 // stringFunctions.c
@@ -140,13 +168,13 @@ double calculate(double number1, double number2, operationType operation);
 uint16_t inputHandler(wchar_t* inputBuffer, wchar_t* outputBuffer);
 
 // renderer
-DWORD Clay_Win32_GetRendererFlags() { return g_dwGdiRenderFlags; }
-void Clay_Win32_SetRendererFlags(DWORD dwFlags) { g_dwGdiRenderFlags = dwFlags; }
-static inline Clay_Color ColorBlend(Clay_Color base, Clay_Color overlay, float factor)
-static float RoundedRectPixelCoverage(int x, int y, const Clay_CornerRadius radius, int width, int height) {
-static void CreateHDCSubstitute(HDCSubstitute* phdcs, HDC hdcSrc, PRECT prc)
-static void __Clay_Win32_FillRoundRect(HDC hdc, PRECT prc, Clay_Color color, Clay_CornerRadius radius)
-void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT* fonts)
-static Clay_Dimensions Clay_Win32_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
-static Clay_Dimensions Clay_Custom_Win32_MeasureWideText(wideText text, Clay_Custom_Wide_String_Style *config, void *userData) {
+DWORD Clay_Win32_GetRendererFlags();
+void Clay_Win32_SetRendererFlags(DWORD dwFlags);
+static inline Clay_Color ColorBlend(Clay_Color base, Clay_Color overlay, float factor);
+static float RoundedRectPixelCoverage(int x, int y, const Clay_CornerRadius radius, int width, int height);
+static void CreateHDCSubstitute(HDCSubstitute* phdcs, HDC hdcSrc, PRECT prc);
+static void __Clay_Win32_FillRoundRect(HDC hdc, PRECT prc, Clay_Color color, Clay_CornerRadius radius);
+void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT* fonts);
+static Clay_Dimensions Clay_Win32_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
+static Clay_Dimensions Clay_Custom_Win32_MeasureWideText(wideText text, Clay_Custom_Wide_String_Style *config, void *userData);
 HFONT Clay_Win32_SimpleCreateFont(const char* filePath, const char* family, int height, int weight);
