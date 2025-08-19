@@ -336,13 +336,11 @@ int APIENTRY WinMain(
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 
-    if (FALSE == RegisterClass(&wc))
-        return 0;
+    if (RegisterClass(&wc) == false) return 0;
 
-    // Calculate window rectangle by given client size
-    // TODO: AdjustWindowRectExForDpi for DPI support
-    RECT rcWindow = { .right = 450, .bottom = 600 };
-    AdjustWindowRectExForDpi(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE, 0, 157);//GetDpiForWindow(hwnd) );
+    RECT rcWindow = { .right = 600, .bottom = 1000 };
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    AdjustWindowRectExForDpi(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE, 0, GetDpiForWindow(hwnd) );
 
     hwnd = CreateWindow(
         szAppName,
