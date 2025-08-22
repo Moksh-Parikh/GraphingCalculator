@@ -376,13 +376,29 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
                 HPEN centreGridLinePen = CreatePen(PS_SOLID, 2,
                                              RGB(0x80, 0x80, 0x80)
                                             );
-                HPEN graphPen = CreatePen(PS_SOLID, 10,
-                                          RGB(0xff, 0x00, 0x00)
+                HPEN graphPen = CreatePen(PS_SOLID, 5,
+                                    RGB(
+                                        graph.graphColour.r,
+                                        graph.graphColour.g,
+                                        graph.graphColour.b
+                                    )
                                          );
 
                 HPEN oldPen = SelectObject(renderer_hdcMem, gridLinePen);
 
-                int verticalCentre = 1 + (graph.horizontalGridLines - 1) / 2;
+                int horizontalCentre = CENTRE(1, graph.verticalGridLines);
+                int verticalCentre = CENTRE(1, graph.horizontalGridLines);
+
+                int rectangleCentreX = CENTRE(r.left, r.right);
+                int rectangleCentreY = CENTRE(r.top, r.bottom);
+
+                POINT parabola[4] = {
+                    (POINT){rectangleCentreX - 140, 0},
+                    (POINT){rectangleCentreX, rectangleCentreY},
+                    (POINT){rectangleCentreX, rectangleCentreY},
+                    (POINT){rectangleCentreX + 140, 0}
+                };
+
                 for (int i = 1; i <= graph.horizontalGridLines; i++) {
                     MoveToEx(renderer_hdcMem, r.left, r.top + (i * boundingBox.height / (graph.horizontalGridLines + 1) ), NULL);
                     if (i == verticalCentre) {
@@ -394,7 +410,6 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
                     }
                 }
 
-                int horizontalCentre = 1 + (graph.verticalGridLines - 1) / 2;
                 for (int i = 1; i <= graph.verticalGridLines + 1; i++) {
                     MoveToEx(renderer_hdcMem, r.left + (i * boundingBox.width / (graph.verticalGridLines + 1) ), r.top, NULL);
 
@@ -408,7 +423,12 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
                     }
                 }
                 
-                // SelectObject(renderer_hdcMem, graphPen);
+                SelectObject(renderer_hdcMem, graphPen);
+                PolyBezier(renderer_hdcMem, parabola, 4);
+                MoveToEx(renderer_hdcMem, rectangleCentreX, rectangleCentreY, NULL);
+                LineTo(renderer_hdcMem, rectangleCentreX, rectangleCentreY);
+
+
                 // MoveToEx(renderer_hdcMem, r.left, r.top, NULL);
                 // LineTo(renderer_hdcMem, r.left, r.bottom);
 

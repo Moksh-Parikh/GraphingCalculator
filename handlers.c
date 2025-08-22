@@ -77,6 +77,8 @@ double calculate(double number1, double number2, operationType operation) {
             return number1 * number2;
         case DIVISION:
             return number1 / number2;
+        case EXPONENT:
+            return pow(number1, number2);
     }
 }
 

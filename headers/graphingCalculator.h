@@ -9,11 +9,16 @@
 
 #include <math.h>
 
+#define CENTRE(min, max) (min) + ( ( (max) - (min) ) / 2)
+
+#define BACKSPACE 0x08
+
+
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
 
 #define MAX_BUFFER_SIZE 1024
-#define MAXIMUM_BUTTONS 37
+#define MAXIMUM_BUTTONS 55
 
 #define FIRACODE    0
 #define ROBOTO      1

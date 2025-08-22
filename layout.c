@@ -144,12 +144,14 @@ void clayButtonRow(int buttons, int rowNumber, char** textArray, buttonStyle sty
                 .width = CLAY_SIZING_GROW(0),
                 .height = CLAY_SIZING_GROW(0),
             },
+            .padding = {
+                .top = containerSize.height / 70,
+            },
             .layoutDirection = CLAY_LEFT_TO_RIGHT,
             .childGap = containerSize.height / 70,
         },
     }) {
         // ensures the rows all have a unique ID
-        int iteratorOffset = rowNumber * 1000;
         for (int i = 0; i < buttons; i++) {
             Clay_String textAsClayString;
             stringToClayString(textArray[i], &textAsClayString);
@@ -264,12 +266,10 @@ Clay_RenderCommandArray createLayout(Clay_Dimensions dimensions, clayTheme layou
         CLAY ({
                 .id = CLAY_ID("buttonContainer"),
                 .layout = {
-                    // .padding = CLAY_PADDING_ALL(dimensions.height / 40),
                     .sizing = {
                         .width = CLAY_SIZING_GROW(0),
                         .height = CLAY_SIZING_GROW(0),
                     },
-                    .childGap = dimensions.height / 70,
                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
                 },
                 .backgroundColor = currentTheme.mainColour,

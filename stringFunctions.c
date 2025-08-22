@@ -24,8 +24,6 @@ void fillStringArray(char** inputArray,
         return;
     }
 
-    uint32_t inputArraySize = sizeof(inputArray) / sizeof(inputArray[0]);
-
     for (int i = 0; i < outputArraySize; i++) {
         int sourceStringLength = strlen(inputArray[i]);
 

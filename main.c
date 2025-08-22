@@ -78,6 +78,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         "}",
         ">",
         "<",
+        "fil1",
+        "fil2",
+        "fil3",
+        "fil4",
+        "fil5",
+        "fil6",
+        "fil7",
+        "fil8",
+        "fil9",
+        "fi11",
+        "fi22",
+        "fi33",
+        "fi44",
+        "fi55",
+        "fi66",
+        "fi77",
+        "fi88",
+        "fi99"
     };
 
     switch (message)
@@ -140,13 +158,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             Clay_SetLayoutDimensions(dim);
         }
         
-        buttonGrid.width = dim.width / 100;
-        buttonGrid.height = dim.height / 100;
+        int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
+        int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
+
+        Clay_Dimensions minimumButtonGrid = {4, 3};
+
+        // if (dim.width > screenWidth / 4) {
+        //     buttonGrid.width = dim.width / screenWidth;
+        // }
+        // else {
+        //     buttonGrid.width = dim.width / 25;
+        // }
+
+        /*
+         * !!!!!ASPECT RATIO!!!!!
+         * */
+        buttonGrid.width = dim.width / minimumButtonGrid.width;
+
+        // printf("%d, %d: %f\n", screenWidth, (int)dim.width, buttonGrid.width);
+        buttonGrid.height = dim.height / 4;
 
         if (buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS) {
             for (int i = 0; buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS; i++) {
                 if (i % 2 == 0) {buttonGrid.height -= 1;}
                 else {buttonGrid.width -= 1;}
+                // if (buttonGrid.height < minimumButtonGrid.height) buttonGrid.height = minimumButtonGrid.height;
+                // if (buttonGrid.width < minimumButtonGrid.width) buttonGrid.width = minimumButtonGrid.width;
+                // printf("loop: %d, %f, %f\n", i, buttonGrid.width, buttonGrid.height);
             }
         }
 
@@ -167,7 +205,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         checkAndClearBuffer(&displayBuffers.top, L" ");
         checkAndClearBuffer(&displayBuffers.bottom, L" ");
         
-        if (wParam == 0x08) { // backspace
+        if (wParam == BACKSPACE) { // backspace
             displayBuffers.top[wcslen(displayBuffers.top) - 1] = L'\0';
             wprintf(L"%ls\n", displayBuffers.top);
             InvalidateRect(hwnd, NULL, false);
@@ -179,6 +217,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                          displayBuffers.bottom
                         );
             wprintf(L"%ls\n", displayBuffers.top);
+            InvalidateRect(hwnd, NULL, false);
+            break;
+        }
+
+        if (wParam == 'C' || wParam == 'c') {
+            displayBuffers.top[0] = L'\0';
+            wcsncpy(displayBuffers.top, L" ", 2);
             InvalidateRect(hwnd, NULL, false);
             break;
         }
@@ -340,7 +385,7 @@ int APIENTRY WinMain(
 
     RECT rcWindow = { .right = 600, .bottom = 1000 };
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    AdjustWindowRectExForDpi(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE, 0, GetDpiForWindow(hwnd) );
+    AdjustWindowRectExForDpi(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE, 0, 0);//GetDpiForWindow(hwnd) );
 
     hwnd = CreateWindow(
         szAppName,
