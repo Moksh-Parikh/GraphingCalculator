@@ -3,13 +3,13 @@
 #define STACK_HEADER
 
 // define the stack's properties
-typedef struct stack {
+typedef struct integerStack {
     long top;
     long long* contents;
-} stack;
+} integerStack;
 
-void make_empty(stack *input_stack);
-int push(long long i, stack *input_stack);
-int pop(stack *input_stack);
+void emptyIntStack(integerStack *input_stack);
+int pushToIntStack(long long i, integerStack *input_stack);
+int popIntStack(integerStack *input_stack);
 
 #endif
