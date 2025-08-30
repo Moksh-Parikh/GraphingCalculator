@@ -5,7 +5,7 @@
 
 void emptyIntStack(integerStack *input_stack) {
     input_stack->top = -1;
-    if (input_stack->contents == NULL) { printf("already empty\n"); return;}
+    if (input_stack->contents == NULL) return;
     free(input_stack->contents);
 }
 
@@ -16,7 +16,6 @@ int pushToIntStack(long long i, integerStack *input_stack) {
     }
     else {
         if (input_stack->top >= 0) {
-            printf("allocing %d items, %d bytes\n", ( ( input_stack->top + 1 ) + 1 ), ( ( input_stack->top + 1 ) + 1 ) * sizeof(long long));
             input_stack->contents = (long long*)
                         realloc(
                             input_stack->contents,
@@ -43,7 +42,7 @@ int pushToIntStack(long long i, integerStack *input_stack) {
             }
 
             input_stack->contents[0] = i;
-            printf("Value: %d\n", input_stack->contents[0]);
+            // printf("Value: %d\n", input_stack->contents[0]);
             input_stack->top = 0;
         }
         else {
@@ -57,7 +56,6 @@ int pushToIntStack(long long i, integerStack *input_stack) {
 int popIntStack(integerStack *input_stack) {
     if (input_stack->top >= 0) {
         int returnVal = input_stack->contents[input_stack->top];
-        printf("Top: %d, value: %d\n", input_stack->top, returnVal);
         input_stack->top = input_stack->top - 1;
 
         if (input_stack->top < 0) {
@@ -86,67 +84,93 @@ int popIntStack(integerStack *input_stack) {
     }
 }
 
-// int pushToStringStack(char* string, stringStack *input_stack) {
-//     if (input_stack->top < 0) {  // ensure top is valid
-//         fprintf(stderr, "Error in push(): Top is less than zero\nTop is %d\n", input_stack->top);
-//         return -1;
-//     }
-//     else {
-//         if (input_stack->top) {
-//             input_stack->contents = (char**) realloc(input_stack->contents, (sizeof(input_stack->contents) + sizeof(long long)));
+void emptyStringStack(stringStack *input_stack) {
+    if (input_stack->contents == NULL) return;
+    for (int i = 0; i <= input_stack->top; i++) {
+        if (input_stack->contents[i] == NULL) continue;
+        else free(input_stack->contents[i]);
+    }
+    input_stack->top = -1;
+    free(input_stack->contents);
+}
+
+int pushToStringStack(char* string, stringStack *input_stack) {
+    if (input_stack->top < -1) {  // ensure top is valid
+        fprintf(stderr, "Error in push(): Top is less than -1 somehow?\nTop is %d\n", input_stack->top);
+        return -1;
+    }
+    else {
+        if (input_stack->top >= 0) {
+            // printf("allocing %d items, %d bytes\n", ( ( input_stack->top + 1 ) + 1 ), ( ( input_stack->top + 1 ) + 1 ) * sizeof(char *));
+            input_stack->contents = (char **)
+                        realloc(
+                            input_stack->contents,
+                            ( ( input_stack->top + 1 ) + 1 ) *
+                            sizeof(char *)
+                        );
             
-//             if (input_stack->contents == NULL) {
-//                 fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
+            if (input_stack->contents == NULL) {
+                fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
             
-//                 return -1;
-//             }
+                return -1;
+            }
 
-//             input_stack->contents[input_stack->top++] = i;
-//         }
-//         else if (!(input_stack->top)) {
-//             input_stack->contents = (long long*) malloc(sizeof(long long));
+            input_stack->top += 1;
+            input_stack->contents[input_stack->top] = calloc( strlen(string) + 1, sizeof(char) );
+            strncpy_s(input_stack->contents[input_stack->top], strlen(string) + 1, string, strlen(string) + 1);
+            // printf("Value: %s vs %s\n", input_stack->contents[input_stack->top], string);
+        }
+        else if (input_stack->top == -1) {
+            input_stack->contents = (char **) malloc(sizeof(char *));
 
-//             if (input_stack->contents == NULL) {
-//                 fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
+            if (input_stack->contents == NULL) {
+                fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
 
-//                 return -1;
-//             }
+                return -1;
+            }
 
-//             input_stack->contents[input_stack->top] = i;
-//             input_stack->top += 1;
-//         }
-//         else {
-//             fprintf(stderr, "Error in push(): IDFK bro\n");
-//         }
+            input_stack->contents[0] = calloc( strlen(string) + 1, sizeof(char) );
+            strncpy_s(input_stack->contents[0], strlen(string) + 1, string, strlen(string) + 1);
+            // printf("Value: %s\n", input_stack->contents[0]);
+            input_stack->top = 0;
+        }
+        else {
+            fprintf(stderr, "Error in push(): IDFK bro\n");
+        }
 
-//         return input_stack->top;
-//     }
-// }
+        return input_stack->top;
+    }
+}
 
+int popStringStack(char** outputString, stringStack *inputStack) {
+    if (inputStack->top >= 0) {
+        char* returnVal = inputStack->contents[inputStack->top];
+        // printf("Top: %d, value: %s\n", inputStack->top, returnVal);
+        inputStack->top--;
 
-// // Always empty the stack at the end of a program using make_empty()
-// // take a value from the top of the stack
-// int popIntStack(integerStack *input_stack) { // pointer to the stack variable
-
-//     // printf("Top: %d\n", input_stack->top);
-//     input_stack->top = (input_stack->top - 1) < 0 ? -1 : input_stack->top - 1;
-
-//     if (input_stack->top >= 0) {
-//         // printf("Top: %d\n", input_stack->top);
+        if (inputStack->top < 0) {
+            inputStack->contents = NULL;
+            free(inputStack->contents);
+        }
+        else {
+            inputStack->contents = (char**)
+                                    realloc(inputStack->contents, 
+                                            sizeof(char*) * (inputStack->top + 1)
+                                    );
+            
+            if (inputStack->contents == NULL) {
+                fprintf(stderr, "Error in pop(): realloc() failed to return a value\n");
+                return -1;
+            }
+        }
+        *outputString = calloc(strlen(returnVal) + 1, sizeof(char) );
+        strncpy_s(*outputString, strlen(returnVal) + 1, returnVal, strlen(returnVal) + 1);
+        return 1;
+    }
+    else {
+        fprintf(stderr, "Error in pop(): stack empty, top is: %d\n", inputStack->top);
         
-//         input_stack->contents = (long long*) realloc(input_stack->contents, (sizeof(input_stack->top)));
-        
-//         if (input_stack->contents == NULL) {
-//             fprintf(stderr, "Error in pop(): realloc() failed to return a value\n");
+        return -1;
+    }
+}
 
-//             return -1;
-//         }
-        
-//         return input_stack->contents[input_stack->top];
-//     }
-//     else {
-//         fprintf(stderr, "Error in pop(): Top is less than zero\nTop is %d\n", input_stack->top);
-        
-//         return -1;
-//     }
-// }

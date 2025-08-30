@@ -8,8 +8,15 @@ typedef struct integerStack {
     long long* contents;
 } integerStack;
 
+typedef struct {
+    int32_t top;
+    char** contents;
+} stringStack;
+
 void emptyIntStack(integerStack *input_stack);
 int pushToIntStack(long long i, integerStack *input_stack);
 int popIntStack(integerStack *input_stack);
+int pushToStringStack(char* string, stringStack *input_stack);
+int popStringStack(char** outputString, stringStack *inputStack);
 
 #endif

@@ -7,7 +7,13 @@
 
 #include "stack_malloced.c"
 
-#define COMPAREPRECEDENCE(x, y) getoperatorPrecedence((x)) - getoperatorPrecedence((y))
+#define COMPAREPRECEDENCE(x, y) getOperatorPrecedence((x)) - getOperatorPrecedence((y))
+
+#define INIT_STACK(x) { (x).top = -1; (x).contents = NULL; }
+
+#define STACK_IS_EMPTY(x) ((x).top < 0) + ((x).top >= 0)
+
+#define STACK_ISNT_EMPTY(x) !STACK_IS_EMPTY(x)
 
 typedef enum {
     ADDITION,
@@ -41,113 +47,6 @@ typedef struct {
 //     double value2;
 //     operationType operation;
 // } mathsOperation;
-
-typedef struct treeNode {
-    struct treeNode** childArray;
-    uint32_t childrenNumber;
-    mathsOperation valuesAndOperation;
-} treeNode;
-
-treeNode* generateEquationSubTree(char* equation);
-
-int initialiseTreeNode(treeNode** node) {
-    *node = malloc(sizeof(treeNode));
-    if (*node == NULL) return 1;
-
-    (*node)->childrenNumber = 0;
-    (*node)->childArray = NULL;
-    (*node)->valuesAndOperation = (mathsOperation){
-        .operationOrValue = OPERATION,
-        .operation = NONE,
-    };
-
-    return 0;
-}
-
-treeNode* insertChild(treeNode* parent, int child, mathsOperation childValue) {
-    treeNode* newChild;// = malloc(sizeof(treeNode));
-    if (newChild == NULL) return NULL;
-
-    if (initialiseTreeNode(&newChild) != 0) return NULL;
-    newChild->valuesAndOperation = childValue;
-    
-    newChild->childArray = malloc(sizeof(treeNode*));
-    if (newChild->childArray == NULL) return NULL;
-
-    newChild->childArray[0] = parent->childArray[child];
-    newChild->childrenNumber += 1;
-
-    parent->childArray[child] = newChild;
-
-    return newChild;
-}
-
-treeNode* addChild(treeNode* parent, mathsOperation childValue) {
-    treeNode* child;// = malloc(sizeof(treeNode));
-    if (initialiseTreeNode(&child) != 0) return NULL;
-
-    child->valuesAndOperation = childValue;
-
-    parent->childArray = parent->childrenNumber == 0 ? malloc(sizeof(treeNode*)) : realloc(parent->childArray, sizeof(treeNode*) * parent->childrenNumber);
-    if (parent->childArray == NULL) return NULL;
-
-
-    parent->childArray[parent->childrenNumber] = child;
-    parent->childrenNumber += 1;
-    return child;
-}
-
-void printTree(treeNode* treeRoot) {
-    if (treeRoot == NULL) return;
-
-    if (treeRoot->childrenNumber > 0 && treeRoot->childArray != NULL) {
-        for (int i = 0; i < treeRoot->childrenNumber; i++) {
-            printTree(treeRoot->childArray[i]);
-        }
-    }
-
-    switch (treeRoot->valuesAndOperation.operationOrValue) {
-        case VALUE:
-            printf("VALUE: %lf\n", treeRoot->valuesAndOperation.value);
-            break;
-        case OPERATION:
-            printf("OPERATION: %d\n", treeRoot->valuesAndOperation.operation);
-            break;
-    }
-}
-
-double evaluateTree(treeNode root) {
-    if (root.valuesAndOperation.operationOrValue == VALUE) return root.valuesAndOperation.value;
-
-    switch(root.valuesAndOperation.operation) {
-        case ADDITION:
-            return evaluateTree(*(root.childArray[0] ) ) + evaluateTree(*( root.childArray[1] ) );
-            break;
-        case SUBTRACTION:
-            return evaluateTree(*(root.childArray[0] ) ) - evaluateTree(*( root.childArray[1] ) );
-            break;
-        case MULTIPLICATION:
-            return evaluateTree(*(root.childArray[0] ) ) * evaluateTree(*( root.childArray[1] ) );
-            break;
-        case DIVISION:
-            return evaluateTree(*(root.childArray[0] ) ) / evaluateTree(*( root.childArray[1] ) );
-            break;
-        case EXPONENT:
-            return pow( evaluateTree(*(root.childArray[0] ) ), evaluateTree(*( root.childArray[1] ) ) );
-            break;
-    }
-
-    // double result = calculate(root.valuesAndOperation);
-
-    // if (root.childrenNumber > 0) {
-    //     for (int i = 0; i < root.childrenNumber; i++) {
-    //         printf("Evaluating %d,", i);
-    //         result += evaluateTree(*(root.childArray[i]));
-    //     }
-    // }
-
-    // return result;
-}
 
 int equationParser(wchar_t* equation) {
     int stringLength = wcslen(equation);
@@ -269,14 +168,22 @@ double calculate(double value1, double value2, operationType operation) {
         case EXPONENT:
             return pow( value1, value2 );
             break;
+        case NONE:
+            return 0;
     }
+    return 0;
 }
 
-int parseEquation(char* equation) {
-    if (equation[0] == '\0') { printf("empty dumbass\n"); return 1; }
+int makePolishNotation(char* equation, char** outputString);
+
+int parseEquation(char* inputEquation) {
+    if (inputEquation[0] == '\0') { printf("empty dumbass\n"); return 1; }
+
+    char* equation = NULL;
+    makePolishNotation(inputEquation, &equation);
+
     integerStack evaluationStack;
-    evaluationStack.top = -1;
-    evaluationStack.contents = NULL;
+    INIT_STACK(evaluationStack);
 
     char *nextNumber = equation;
     double currVal;
@@ -297,7 +204,7 @@ int parseEquation(char* equation) {
                         operatorType(nextNumber[0])
             );
 
-            printf("%d\n", currVal);
+            // printf("%d\n", currVal);
             pushToIntStack(
                  (long long)currVal,
                  &evaluationStack
@@ -306,53 +213,92 @@ int parseEquation(char* equation) {
         nextNumber += 1;
     }
 
-    printf("Result %d\n", popIntStack(&evaluationStack));
-
+    int returnVal = popIntStack(&evaluationStack);
     emptyIntStack(&evaluationStack);
+
+    printf("%d\n", returnVal);
+
+    return returnVal;
 }
 
-int getoperatorPrecedence(operationType operator) {
+int getOperatorPrecedence(char operator) {
     switch (operator) {
-        case ADDITION:
-        case SUBTRACTION:
+        case '+':
+        case '-':
             return 1;
-        case MULTIPLICATION:
-        case DIVISION:
+        case '*':
+        case '/':
             return 2;
-        case EXPONENT:
+        case '^':
             return 3;
     }
+
+    return 0;
 }
 
-int makePolishNotation(char* equation) {
-    integerStack numberStack;
+int makePolishNotation(char* equation, char** outputString) {
     integerStack operatorStack;
+    INIT_STACK(operatorStack);
 
     // gives us enough memory for all the extra spaces we will add
-    char* outString = malloc( 2 * (strlen(equation) + 1) * sizeof(char) );
-    int outStringLength = 0;
-    char tempOperator = '\0';
+    char* outString = calloc( 2 * (strlen(equation) + 1) * sizeof(char), sizeof(char) );
+    char* tempString = calloc( (strlen(equation) + 1), sizeof(char) );
+    if (outString == NULL || tempString == NULL) return 1;
+
+    int outStringLength = 0, tempStringLength = 0;
 
     for (int i = 0; i < strlen(equation); i++) {
-        printf("%d, ", i);
         if (equation[i] >= '0' && equation[i] <= '9') {
-            outString[outStringLength] = equation[i];
-            outStringLength++;
+            tempString[tempStringLength] = equation[i];
+            tempStringLength++;
         }
         else if (operatorType(equation[i]) != NONE) {
-            outString[outStringLength] = ' ';
-            outStringLength++;
-            if (tempOperator != '\0') {
-                outString[outStringLength] = tempOperator;
-                outString[outStringLength + 1] = ' ';
-                outStringLength += 2;
+            int length = strlen(tempString);
+            strncat(outString, tempString, length);
+            memset(tempString, '\0', tempStringLength);
+
+            tempStringLength = 0;
+            
+            outStringLength += length;
+            outString[outStringLength++] = ' ';
+            
+
+            if (STACK_ISNT_EMPTY(operatorStack) &&
+                COMPAREPRECEDENCE(equation[i], operatorStack.contents[operatorStack.top]) <= 0
+               ) {
+                outString[outStringLength++] = popIntStack(&operatorStack);
+                outString[outStringLength++] = ' ';
+                pushToIntStack(equation[i], &operatorStack);
             }
-            tempOperator = equation[i];
+            else {
+                pushToIntStack(equation[i], &operatorStack);
+            }
         }
     }
-    outString[outStringLength] = '\0';
 
-    printf("String: %s\n", outString);
+    if (tempString[0] != '\0') { 
+        int length = strlen(tempString);
+        strncat(outString, tempString, length);
+        outStringLength += length;
+        outString[outStringLength++] = ' ';
+        
+        while (STACK_ISNT_EMPTY(operatorStack) ) {
+            outString[outStringLength++] = popIntStack(&operatorStack);
+            if (operatorStack.top >= 0) {
+                outString[outStringLength] = ' ';
+            }
+            outStringLength++;
+        }
+    }
+
+    *outputString = calloc(outStringLength, sizeof(char));
+    snprintf(*outputString, outStringLength, "%s", outString);
+
+    free(outString);
+    free(tempString);
+    emptyIntStack(&operatorStack);
+
+    return 0;
 }
 
 bool isCommutative(operationType operation) {
@@ -365,118 +311,14 @@ bool isCommutative(operationType operation) {
         case SUBTRACTION:
             return false;
     }
-}
 
-// an equation should be two values with an operator in between
-// for example: 2*3, 3^2, not 2*3^2
-treeNode* generateEquationSubTree(char* equation) {
-    char* operatorsArray[5] = {
-        "+",
-        "-",
-        "*",
-        "/",
-        "^"
-    };
-
-    operationType operator = findOperator(equation, operatorsArray);
-
-    treeNode* operationNode;
-    initialiseTreeNode(&operationNode);
-
-    operationNode->valuesAndOperation = (mathsOperation) {
-        .operationOrValue = OPERATION,
-        .operation = operator
-    };
-
-    char* nextValue;
-    addChild(operationNode,
-        (mathsOperation) {
-            .operationOrValue = VALUE,
-            .value = strtold(equation, &nextValue)
-        }
-    );
-
-    addChild(operationNode,
-        (mathsOperation) {
-            .operationOrValue = VALUE,
-            .value = strtold(nextValue + 1, NULL)
-        }
-    );
-
-    return operationNode;
+    return false;
 }
 
 int main(void) {
-    // wchar_t* testEquation = L"3*4+69-12/4";
-    // equationParser(testEquation);
+    parseEquation("3 * 4 + 69 - 12 / 4");
 
-    // /*
-    //  *         -
-    //  *       /   \
-    //  *      +     \
-    //  *     / \     /
-    //  *    *  69   / \
-    //  *   / \     12  4
-    //  *  3   4
-    //  */
-    // treeNode* treeRoot;
-    // initialiseTreeNode(&treeRoot);
-    // treeRoot->valuesAndOperation.operationOrValue = OPERATION;
-    // treeRoot->valuesAndOperation.operation = SUBTRACTION;
-
-    // mathsOperation childData = (mathsOperation) {
-    //     .operationOrValue = OPERATION,
-    //     .operation = ADDITION
-    // };
-    // mathsOperation childData1_1 = (mathsOperation) {
-    //     .operationOrValue = OPERATION,
-    //     .operation = MULTIPLICATION
-    // };
-    // mathsOperation childData2 = (mathsOperation) {
-    //     .operationOrValue = OPERATION,
-    //     .operation = DIVISION
-    // };
-    // mathsOperation childData1_2 = (mathsOperation) {
-    //     .operationOrValue = VALUE,
-    //     .value = 69
-    // };
-    // mathsOperation childData2_1 = (mathsOperation) {
-    //     .operationOrValue = VALUE,
-    //     .value = 12
-    // };
-    // mathsOperation childData2_2 = (mathsOperation) {
-    //     .operationOrValue = VALUE,
-    //     .value = 4
-    // };
-    // mathsOperation childData1_1_1 = (mathsOperation) {
-    //     .operationOrValue = VALUE,
-    //     .value = 3
-    // };
-    // mathsOperation childData1_1_2 = (mathsOperation) {
-    //     .operationOrValue = VALUE,
-    //     .value = 4
-    // };
-
-    // // treeRoot->valuesAndOperation = (mathsOperation){0, 0, NONE};
-
-    // treeNode* _1 = addChild(treeRoot, childData);
-    // treeNode* _2 = addChild(treeRoot, childData2);
-    // treeNode* _3 = addChild(_1, childData1_1);
-    // treeNode* _4 = addChild(_1, childData1_2);
-    // treeNode* _5 = addChild(_2, childData2_1);
-    // treeNode* _6 = addChild(_2, childData2_2);
-    // treeNode* _7 = addChild(_3, childData1_1_1);
-    // treeNode* _8 = addChild(_3, childData1_1_2);
-
-    // printTree(treeRoot);
-    // printf("%g\n", evaluateTree(*treeRoot));
-
-    // treeNode* subTree = generateEquationSubTree("3*4");
-    // printTree(subTree);
-
-    parseEquation("3 4 * 69 + 12 4 / -");
-
-    makePolishNotation("3*4+69-12/4");
+    // makePolishNotation("3*4+69-12/4");
 
     printf("hii\n");
 }
