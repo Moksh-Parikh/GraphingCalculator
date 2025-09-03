@@ -1,31 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <math.h>
-#include <wchar.h>
-#include <string.h>
-
-#include "stack.c"
-
-#define COMPAREPRECEDENCE(x, y) getOperatorPrecedence((x)) - getOperatorPrecedence((y))
-
-#define LEFT 0
-#define RIGHT 1
-
-typedef enum {
-    ADDITION,
-    SUBTRACTION,
-    MULTIPLICATION,
-    DIVISION,
-    EXPONENT,
-    OPEN_BRACKET,
-    CLOSE_BRACKET,
-    DIGIT,
-    DECIMAL_POINT,
-    LETTER,
-    NONE,
-} operationType;
-
 operationType operatorType(char character) {
     switch (character) {
         case '+':
@@ -87,8 +59,6 @@ double calculate(double value1, double value2, operationType operation) {
     }
     return 0;
 }
-
-int makePolishNotation(char* equation, char** outputString);
 
 double parseEquation(char* inputEquation) {
     if (inputEquation[0] == '\0') { printf("empty dumbass\n"); return 1; }
@@ -280,10 +250,4 @@ int makePolishNotation(char* equation, char** outputString) {
     emptyStack(&operatorStack);
 
     return 0;
-}
-
-int main(void) {
-    parseEquation("3 ^ 2 ^ 2 - 2 * 4");
-
-    printf("hii\n");
 }

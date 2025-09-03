@@ -9,13 +9,23 @@
 
 #include <math.h>
 
+#define CLAY_IMPLEMENTATION
+#include "clay.h"
+
 #define CENTRE(min, max) (min) + ( ( (max) - (min) ) / 2)
+
+#define INIT_INTEGER_STACK { .type = INTEGER, .top = -1, .integerContents = NULL, }
+#define INIT_DOUBLE_STACK { .type = DOUBLE, .top = -1, .floatContents = NULL, }
+
+#define STACK_IS_EMPTY(x) ((x).top < 0) + ((x).top >= 0)
+#define STACK_ISNT_EMPTY(x) !STACK_IS_EMPTY(x)
 
 #define BACKSPACE 0x08
 
+#define COMPAREPRECEDENCE(x, y) getOperatorPrecedence((x)) - getOperatorPrecedence((y))
 
-#define CLAY_IMPLEMENTATION
-#include "clay.h"
+#define LEFT 0
+#define RIGHT 1
 
 #define MAX_BUFFER_SIZE 1024
 #define MAXIMUM_BUTTONS 55
@@ -33,19 +43,6 @@ typedef struct {
     wchar_t* top;
     wchar_t* bottom;
 } outputBuffers;
-
-typedef enum {
-    ADDITION = 0,
-    SUBTRACTION,
-    MULTIPLICATION,
-    DIVISION,
-    EXPONENT
-} operationType;
-
-typedef struct {
-    wchar_t character;
-    uint16_t occurrence;
-} occurrenceTable;
 
 typedef struct {
     wchar_t* string;
@@ -151,7 +148,40 @@ typedef struct {
     SIZE size;
 } HDCSubstitute;
 
+typedef enum {
+    ADDITION,
+    SUBTRACTION,
+    MULTIPLICATION,
+    DIVISION,
+    EXPONENT,
+    OPEN_BRACKET,
+    CLOSE_BRACKET,
+    DIGIT,
+    DECIMAL_POINT,
+    LETTER,
+    NONE,
+} operationType;
+
+typedef enum {
+    INTEGER,
+    DOUBLE
+} stackType;
+
+typedef struct {
+    stackType type;
+    int32_t top;
+    union {
+        int32_t* integerContents;
+        double* floatContents;
+    };
+} stack;
+
 void CenterWindow(HWND hWnd);
+
+// stack.c
+int pushToStack(void* value, stack* inputStack);
+int popStack(void* output, stack* inputStack);
+void emptyStack(stack *inputStack);
 
 // stringFunctions.c
 void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison);
@@ -183,3 +213,11 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
 static Clay_Dimensions Clay_Win32_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
 static Clay_Dimensions Clay_Custom_Win32_MeasureWideText(wideText text, Clay_Custom_Wide_String_Style *config, void *userData);
 HFONT Clay_Win32_SimpleCreateFont(const char* filePath, const char* family, int height, int weight);
+
+// equationEvaluator.c
+operationType operatorType(char character);
+double calculate(double value1, double value2, operationType operation);
+double parseEquation(char* inputEquation);
+int getOperatorPrecedence(char operator);
+int getOperatorAssociativeness(char operator);
+int makePolishNotation(char* equation, char** outputString);

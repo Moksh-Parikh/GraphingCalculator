@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "stack.h"
-
 void emptyFloatStack(stack *inputStack) {
     inputStack->top = -1;
     if (inputStack->floatContents == NULL) return;

@@ -16,14 +16,8 @@ typedef struct integerStack {
     long long* contents;
 } integerStack;
 
-typedef struct {
-    int32_t top;
-    char** contents;
-} stringStack;
-
 typedef enum {
     INTEGER,
-    STRING,
     DOUBLE
 } stackType;
 
@@ -31,7 +25,6 @@ typedef struct {
     stackType type;
     int32_t top;
     union {
-        char** stringContents;
         int32_t* integerContents;
         double* floatContents;
     };

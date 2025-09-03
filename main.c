@@ -18,9 +18,11 @@ HFONT fonts[3];
 
 outputBuffers displayBuffers;
 
-#include "handlers.c"
-#include "layout.c"
-#include "stringFunctions.c"
+#include "libraries/handlers.c"
+#include "libraries/layout.c"
+#include "libraries/stringFunctions.c"
+#include "libraries/stack.c"
+#include "libraries/equationEvaluator.c"
 
 #define APPNAME "Calculator"
 char szAppName[] = APPNAME; // The name of this application
