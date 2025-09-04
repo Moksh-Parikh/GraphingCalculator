@@ -43,7 +43,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     char *buttonTextOptions[MAXIMUM_BUTTONS] =
     {
-        "C",
+        CLEAR_CHARACTER,
         "0",
         "1",
         "2",
@@ -160,9 +160,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             Clay_SetLayoutDimensions(dim);
         }
         
-        int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
-        int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
-
         Clay_Dimensions minimumButtonGrid = {4, 3};
 
         // if (dim.width > screenWidth / 4) {
@@ -175,20 +172,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         /*
          * !!!!!ASPECT RATIO!!!!!
          * */
-        buttonGrid.width = dim.width / minimumButtonGrid.width;
+        // buttonGrid.width = dim.width / minimumButtonGrid.width;
 
         // printf("%d, %d: %f\n", screenWidth, (int)dim.width, buttonGrid.width);
-        buttonGrid.height = dim.height / 4;
+        // buttonGrid.height = dim.height / 4;
 
-        if (buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS) {
-            for (int i = 0; buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS; i++) {
-                if (i % 2 == 0) {buttonGrid.height -= 1;}
-                else {buttonGrid.width -= 1;}
-                // if (buttonGrid.height < minimumButtonGrid.height) buttonGrid.height = minimumButtonGrid.height;
-                // if (buttonGrid.width < minimumButtonGrid.width) buttonGrid.width = minimumButtonGrid.width;
-                // printf("loop: %d, %f, %f\n", i, buttonGrid.width, buttonGrid.height);
-            }
-        }
+        // if (buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS) {
+        //     for (int i = 0; buttonGrid.height * buttonGrid.width > MAXIMUM_BUTTONS; i++) {
+        //         if (i % 2 == 0) {buttonGrid.height -= 1;}
+        //         else {buttonGrid.width -= 1;}
+        //         // if (buttonGrid.height < minimumButtonGrid.height) buttonGrid.height = minimumButtonGrid.height;
+        //         // if (buttonGrid.width < minimumButtonGrid.width) buttonGrid.width = minimumButtonGrid.width;
+        //         // printf("loop: %d, %f, %f\n", i, buttonGrid.width, buttonGrid.height);
+        //     }
+        // }
 
         fillStringArray(buttonTextOptions, buttonText, buttonGrid.width * buttonGrid.height);
 

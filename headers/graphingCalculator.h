@@ -21,6 +21,7 @@
 #define STACK_ISNT_EMPTY(x) !STACK_IS_EMPTY(x)
 
 #define BACKSPACE 0x08
+#define CLEAR_CHARACTER "C"
 
 #define COMPAREPRECEDENCE(x, y) getOperatorPrecedence((x)) - getOperatorPrecedence((y))
 

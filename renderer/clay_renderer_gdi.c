@@ -284,6 +284,37 @@ static void __Clay_Win32_FillRoundRect(HDC hdc, PRECT prc, Clay_Color color, Cla
     DestroyHDCSubstitute(&substitute);
 }
 
+POINT* calculateBezierControlPoints(POINT* intersectionPoints) {
+    // i hate maths
+    POINT quadraticControlPoint;
+    
+    POINT p0, p2;
+    p0 = intersectionPoints[0];
+    p2 = intersectionPoints[2];
+
+    quadraticControlPoint.x = 2 * intersectionPoints[1].x -
+             0.5 * (p0.x + p2.x );
+    quadraticControlPoint.y = 2 * intersectionPoints[1].y -
+             0.5 * (p0.y + p2.y );
+
+    POINT cubicControlPoint1, cubicControlPoint2;
+    double oneThird = 1.0 / 3.0, twoThirds = 2.0 / 3.0;
+
+    cubicControlPoint1.x = twoThirds * quadraticControlPoint.x + oneThird * p0.x;
+    cubicControlPoint1.y = twoThirds * quadraticControlPoint.y + oneThird * p0.y;
+
+    cubicControlPoint2.x = twoThirds * quadraticControlPoint.x + oneThird * p2.x;
+    cubicControlPoint2.y = twoThirds * quadraticControlPoint.y + oneThird * p2.y;
+
+    POINT* pointArrayPtr = malloc(sizeof(POINT) * 4);
+    pointArrayPtr[0] = p0;
+    pointArrayPtr[1] = cubicControlPoint1;
+    pointArrayPtr[2] = cubicControlPoint2;
+    pointArrayPtr[3] = p2;
+
+    return pointArrayPtr;
+}
+
 void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT* fonts)
 {
     bool is_clipping = false;
@@ -392,13 +423,6 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
                 int rectangleCentreX = CENTRE(r.left, r.right);
                 int rectangleCentreY = CENTRE(r.top, r.bottom);
 
-                POINT parabola[4] = {
-                    (POINT){rectangleCentreX - 140, 0},
-                    (POINT){rectangleCentreX, rectangleCentreY},
-                    (POINT){rectangleCentreX, rectangleCentreY},
-                    (POINT){rectangleCentreX + 140, 0}
-                };
-
                 for (int i = 1; i <= graph.horizontalGridLines; i++) {
                     MoveToEx(renderer_hdcMem, r.left, r.top + (i * boundingBox.height / (graph.horizontalGridLines + 1) ), NULL);
                     if (i == verticalCentre) {
@@ -422,15 +446,17 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
                         SelectObject(renderer_hdcMem, gridLinePen);
                     }
                 }
+
+                POINT testArr[3] = {
+                    (POINT){r.left, r.top},
+                    (POINT){rectangleCentreX, rectangleCentreY},
+                    (POINT){r.right, r.top}
+                };
+
+                POINT* hi = calculateBezierControlPoints(testArr);
                 
                 SelectObject(renderer_hdcMem, graphPen);
-                PolyBezier(renderer_hdcMem, parabola, 4);
-                MoveToEx(renderer_hdcMem, rectangleCentreX, rectangleCentreY, NULL);
-                LineTo(renderer_hdcMem, rectangleCentreX, rectangleCentreY);
-
-
-                // MoveToEx(renderer_hdcMem, r.left, r.top, NULL);
-                // LineTo(renderer_hdcMem, r.left, r.bottom);
+                PolyBezier(renderer_hdcMem, hi, 4);
 
                 SelectObject(renderer_hdcMem, oldPen);
                 DeleteObject(graphPen);

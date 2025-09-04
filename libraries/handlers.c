@@ -8,7 +8,12 @@ void handleButton(Clay_ElementId elementId, Clay_PointerData pointerData, intptr
         if (!wcscmp(displayBuffers.top, L"NULL")) {
             displayBuffers.top[0] = L'\0';
         }
-        
+
+        if ( !strncmp(elementId.stringId.chars, CLEAR_CHARACTER, strlen(CLEAR_CHARACTER) ) ) {
+            displayBuffers.top[0] = L'\0';
+            return;
+        }
+
         wcsncat(displayBuffers.top, temp, wcslen(temp));
         printf("Clicked: %s\n", elementId.stringId.chars);
     }
