@@ -185,6 +185,7 @@ int popStack(void* output, stack* inputStack);
 void emptyStack(stack *inputStack);
 
 // stringFunctions.c
+void removeTrailingZeroes(double value, wchar_t* outputBuffer);
 void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison);
 void clearBuffer(wchar_t* buffer);
 void fillStringArray(char** inputArray, char** outputArray, int outputArraySize);

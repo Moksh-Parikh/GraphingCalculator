@@ -19,7 +19,7 @@ int pushToFloatStack(double i, stack *inputStack) {
                         );
             
             if (inputStack->floatContents == NULL) {
-                fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
+                fprintf(stderr, "Error in push(): realloc() failed to return a value\n");
             
                 return -1;
             }
@@ -30,7 +30,6 @@ int pushToFloatStack(double i, stack *inputStack) {
         }
         else if (inputStack->top == -1) {
             inputStack->floatContents = (double*) malloc(sizeof(double));
-
             if (inputStack->floatContents == NULL) {
                 fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
 
@@ -99,9 +98,8 @@ int pushToIntStack(int32_t i, stack *input_stack) {
                             ( ( input_stack->top + 1 ) + 1 ) *
                             sizeof(int32_t)
                         );
-            
             if (input_stack->integerContents == NULL) {
-                fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
+                fprintf(stderr, "Error in push(): realloc() failed to return a value\n");
             
                 return -1;
             }
@@ -111,7 +109,6 @@ int pushToIntStack(int32_t i, stack *input_stack) {
         }
         else if (input_stack->top == -1) {
             input_stack->integerContents = (int32_t*) malloc(sizeof(int32_t));
-
             if (input_stack->integerContents == NULL) {
                 fprintf(stderr, "Error in push(): malloc() failed to return a value\n");
 

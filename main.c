@@ -204,7 +204,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         checkAndClearBuffer(&displayBuffers.top, L" ");
         checkAndClearBuffer(&displayBuffers.bottom, L" ");
         
-        if (wParam == BACKSPACE) { // backspace
+        if (wParam == BACKSPACE) {
             displayBuffers.top[wcslen(displayBuffers.top) - 1] = L'\0';
             wprintf(L"%ls\n", displayBuffers.top);
             InvalidateRect(hwnd, NULL, false);
@@ -215,7 +215,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             inputHandler(displayBuffers.top,
                          displayBuffers.bottom
                         );
-            wprintf(L"%ls\n", displayBuffers.top);
             InvalidateRect(hwnd, NULL, false);
             break;
         }
@@ -223,6 +222,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (wParam == 'C' || wParam == 'c') {
             displayBuffers.top[0] = L'\0';
             wcsncpy(displayBuffers.top, L" ", 2);
+            displayBuffers.bottom[0] = L'\0';
+            wcsncpy(displayBuffers.bottom, L" ", 2);
             InvalidateRect(hwnd, NULL, false);
             break;
         }

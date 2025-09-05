@@ -62,9 +62,10 @@ double calculate(double value1, double value2, operationType operation) {
 
 double parseEquation(char* inputEquation) {
     if (inputEquation[0] == '\0') { printf("empty dumbass\n"); return 1; }
-
+    
     char* equation = NULL;
     makePolishNotation(inputEquation, &equation);
+    printf("%s\n", equation);
 
     stack evaluationStack = INIT_DOUBLE_STACK;
 
@@ -81,7 +82,7 @@ double parseEquation(char* inputEquation) {
         }
         else if (operatorType(nextNumber[0]) != NONE) {
             double val1, val2;
-
+            
             popStack((void*)(&val1), &evaluationStack);
             popStack((void*)(&val2), &evaluationStack);
             currVal = calculate(
@@ -104,7 +105,6 @@ double parseEquation(char* inputEquation) {
     emptyStack(&evaluationStack);
 
     printf("Result: %g\n", returnVal);
-
     return returnVal;
 }
 
@@ -137,117 +137,138 @@ int makePolishNotation(char* equation, char** outputString) {
     stack operatorStack = INIT_INTEGER_STACK;
 
     // gives us enough memory for all the extra spaces we will add
-    char* outString = calloc( 2 * (strlen(equation) + 1) * sizeof(char), sizeof(char) );
+    char* outString = calloc( 2 * (strlen(equation) + 1), sizeof(char) );
     char* tempString = calloc( (strlen(equation) + 1), sizeof(char) );
     if (outString == NULL || tempString == NULL) return 1;
 
     int outStringLength = 0, tempStringLength = 0;
     bool doublePop = false;
 
+    printf("\n\n%s\n", equation);
+
     for (int i = 0; i < strlen(equation); i++) {
-        switch (operatorType(equation[i] ) ) {
-            case NONE:
-                break;
+        printf("%s @ i = %d\n", tempString, i);
 
-            case DECIMAL_POINT:
-            case DIGIT:
-                tempString[tempStringLength] = equation[i];
-                tempStringLength++;
-                break;
+        switch (operatorType(equation[i] ) )
+        {
+        case NONE:
+            break;
 
-            case OPEN_BRACKET:
-                pushToStack((void*)equation[i], &operatorStack);
-                break;
+        case DECIMAL_POINT:
+        case DIGIT:
+            tempString[tempStringLength] = equation[i];
+            tempStringLength++;
+            break;
 
-            case ADDITION:
-            case SUBTRACTION:
-            case MULTIPLICATION:
-            case DIVISION:
-            case EXPONENT:
-            case CLOSE_BRACKET:
-            {
-                int length = strlen(tempString);
-                strncat(outString, tempString, length);
-                memset(tempString, '\0', tempStringLength);
+        case OPEN_BRACKET:
+            pushToStack((void*)equation[i], &operatorStack);
+            break;
 
-                tempStringLength = 0;
-                
-                outStringLength += length;
-                outString[outStringLength++] = ' ';
+        case ADDITION:
+        case SUBTRACTION:
+        case MULTIPLICATION:
+        case DIVISION:
+        case EXPONENT:
+        case CLOSE_BRACKET:
+        {
+            int length = strlen(tempString);
+            strncat(outString, tempString, length);
+            memset(tempString, '\0', tempStringLength);
 
-                switch (operatorType(equation[i] ) ) {
-                    case ADDITION:
-                    case SUBTRACTION:
-                    case MULTIPLICATION:
-                    case DIVISION:
-                    case EXPONENT:
-                        if (STACK_ISNT_EMPTY(operatorStack) &&
-                            getOperatorAssociativeness(equation[i]) == RIGHT &&
-                            getOperatorAssociativeness(operatorStack.integerContents[operatorStack.top]) == RIGHT
-                        ) {
-                            pushToStack((void*)equation[i], &operatorStack);
-                            doublePop = true;
-                        }
-                        else if (doublePop) {
-                            outString[outStringLength++] = popStack(NULL, &operatorStack);
-                            outString[outStringLength++] = ' ';
-                            outString[outStringLength++] = popStack(NULL, &operatorStack);
-                            outString[outStringLength++] = ' ';
+            tempStringLength = 0;
+            
+            outStringLength += length;
+            outString[outStringLength++] = ' ';
 
-                            doublePop = false;
-                            
-                            pushToStack((void*)equation[i], &operatorStack);
-                        }
-                        else if (STACK_ISNT_EMPTY(operatorStack) &&
-                            COMPAREPRECEDENCE(equation[i], operatorStack.integerContents[operatorStack.top]) <= 0
-                           ) {
-                            outString[outStringLength++] = popStack(NULL, &operatorStack);
-                            outString[outStringLength++] = ' ';
-                            pushToStack((void*)equation[i], &operatorStack);
-                        }
-                        else {
-                            pushToStack((void*)equation[i], &operatorStack);
-                        }
-                        break;
+            switch (operatorType(equation[i] ) ) {
+                case ADDITION:
+                case SUBTRACTION:
+                case MULTIPLICATION:
+                case DIVISION:
+                case EXPONENT:
+                    if (STACK_ISNT_EMPTY(operatorStack) &&
+                        getOperatorAssociativeness(equation[i]) == RIGHT &&
+                        getOperatorAssociativeness(operatorStack.integerContents[operatorStack.top]) == RIGHT
+                    ) {
+                        pushToStack((void*)equation[i], &operatorStack);
+                        doublePop = true;
+                    }
+                    else if (doublePop) {
+                        outString[outStringLength++] = popStack(NULL, &operatorStack);
+                        outString[outStringLength++] = ' ';
+                        outString[outStringLength++] = popStack(NULL, &operatorStack);
+                        outString[outStringLength++] = ' ';
 
-                    case CLOSE_BRACKET:
-                        for (int i = 0; i < 100; i++) {
-                            char operatorTemp = popStack(NULL, &operatorStack);
-                            if (operatorTemp == '(') break;
+                        doublePop = false;
+                        
+                        pushToStack((void*)equation[i], &operatorStack);
+                    }
+                    else if (STACK_ISNT_EMPTY(operatorStack) &&
+                        COMPAREPRECEDENCE(equation[i], operatorStack.integerContents[operatorStack.top]) <= 0
+                       ) {
+                        outString[outStringLength++] = popStack(NULL, &operatorStack);
+                        outString[outStringLength++] = ' ';
+                        pushToStack((void*)equation[i], &operatorStack);
+                    }
+                    else {
+                        pushToStack((void*)equation[i], &operatorStack);
+                    }
+                    break;
 
-                            outString[outStringLength++] = operatorTemp;
-                            outString[outStringLength++] = ' ';
-                        }
-                        break;
-                }
+                case CLOSE_BRACKET:
+                    for (int i = 0; i < 100; i++) {
+                        char operatorTemp = popStack(NULL, &operatorStack);
+                        if (operatorTemp == '(') break;
+
+                        outString[outStringLength++] = operatorTemp;
+                        outString[outStringLength++] = ' ';
+                    }
+                    break;
             }
+        }
+        break;
+
+        case LETTER:
+            printf("entered a variable\n");
             break;
         }
 
     }
 
-    if (tempString[0] != '\0') { 
-        int length = strlen(tempString);
-        strncat(outString, tempString, length);
-        outStringLength += length;
-        outString[outStringLength++] = ' ';
-        
-        while (STACK_ISNT_EMPTY(operatorStack) ) {
-            outString[outStringLength++] = popStack(NULL, &operatorStack);
-            if (operatorStack.top >= 0) {
-                outString[outStringLength] = ' ';
-            }
-            outStringLength++;
+    while (STACK_ISNT_EMPTY(operatorStack) ) {
+        if (tempString[0] != '\0') { 
+            printf("Releasing: %s\n", tempString);
+
+            int length = strlen(tempString);
+
+            strncat(outString, tempString, length);
+            memset(tempString, '\0', tempStringLength);
+            tempStringLength = 0;
+            
+            outStringLength += length;
+            outString[outStringLength++] = ' ';
         }
+            
+        outString[outStringLength++] = popStack(NULL, &operatorStack);
+        if (operatorStack.top >= 0) {
+            outString[outStringLength++] = ' ';
+        }    
     }
 
-    *outputString = calloc(outStringLength, sizeof(char));
-    snprintf(*outputString, outStringLength, "%s", outString);
-    printf("%s, %s\n", equation, outString);
+    outStringLength++; // accounts for final NULL character
 
-    free(outString);
+    *outputString = calloc(outStringLength, sizeof(char));
+    if (outString == NULL) return -1;
+
+    snprintf(*outputString, outStringLength, "%s", outString);
+
+    printf("starting free chain: ");
     free(tempString);
+    printf("free tempString, ");
+    free(outString);
+    printf("free outstring, ");
     emptyStack(&operatorStack);
+    printf("destroyed stack\n");
 
     return 0;
 }

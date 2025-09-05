@@ -74,18 +74,14 @@ char* wideStringToAnsi(wchar_t* wideStr) {
 }
 
 uint16_t inputHandler(wchar_t* inputBuffer, wchar_t* outputBuffer) {
-    for (int i = 0; i < 5; i++) {
-            char *equationString = wideStringToAnsi(inputBuffer);
+    char *equationString = wideStringToAnsi(inputBuffer);
 
-            double result = parseEquation(equationString);
+    double result = parseEquation(equationString);
 
-            clearBuffer(outputBuffer);
-
-            snwprintf(outputBuffer, MAX_BUFFER_SIZE, L"%lf", 
-                   result
-                   );
-            free(equationString);
-    }
+    clearBuffer(outputBuffer);
+    
+    removeTrailingZeroes(result, outputBuffer);
+    free(equationString);
     
     return 0;
 }

@@ -1,3 +1,23 @@
+void removeTrailingZeroes(double value, wchar_t* outputBuffer) {
+    wchar_t* buffer = malloc(MAX_BUFFER_SIZE * sizeof(wchar_t) );
+    if (buffer == NULL) {
+        snwprintf(outputBuffer, MAX_BUFFER_SIZE, L"%ls", buffer);
+        return;
+    }
+    snwprintf(buffer, MAX_BUFFER_SIZE, L"%lf", value);
+
+    int i = wcslen(buffer) - 1;
+
+    for (i; i >= 0; i--) {
+        if (buffer[i] != L'0') break;
+    }
+    i += 1;
+    if (buffer[i - 1] == L'.') i -= 1;
+
+    snwprintf(outputBuffer, i + 1, L"%ls", buffer);
+    free(buffer);
+}
+
 void checkAndClearBuffer(wchar_t** buffer, wchar_t* comparison) {
     if (!wcscmp(*buffer, comparison)) {
         for (int i = 0; i < wcslen(comparison); i++) {
@@ -45,7 +65,6 @@ void fillStringArray(char** inputArray,
 
 
 void stringToClayString(char* inString, Clay_String* outString) {
-    /* outString = malloc(sizeof(Clay_String)); */
     (*outString).isStaticallyAllocated = false;
     
     if (inString == NULL) {

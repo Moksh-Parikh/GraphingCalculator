@@ -35,7 +35,6 @@ clayTheme currentTheme = {
 
 
 void customWideText(wchar_t* inString, Clay_Custom_Wide_String_Style stringData) {
-    // wideText *textData = malloc(sizeof(wideText));
     int stringLength = wcslen(inString);
     
     Clay_CustomElementData *textData = (Clay_CustomElementData *)malloc(sizeof(Clay_CustomElementData));
@@ -84,6 +83,11 @@ void customGraph() {//Clay_Dimensions dimensions) {
     Clay_CustomElementData *graphInfo = (Clay_CustomElementData*)malloc(
         sizeof(Clay_CustomElementData)
     );
+    
+    if (graphInfo == NULL) {
+        printf("malloc() failed in %s, exiting\n", __func__);
+        exit(1);
+    }
 
     *graphInfo = (Clay_CustomElementData){
         .type = CLAY_CUSTOM_GRAPH,

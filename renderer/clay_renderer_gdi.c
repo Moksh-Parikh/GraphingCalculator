@@ -457,6 +457,7 @@ void Clay_Win32_Render(HWND hwnd, Clay_RenderCommandArray renderCommands, HFONT*
                 
                 SelectObject(renderer_hdcMem, graphPen);
                 PolyBezier(renderer_hdcMem, hi, 4);
+                free(hi);
 
                 SelectObject(renderer_hdcMem, oldPen);
                 DeleteObject(graphPen);
